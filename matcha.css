@@ -1,0 +1,160 @@
+
+
+:root{
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --accent: #6b9ef6;
+  --accent-2: #7ee787;
+  --danger: #f56a6a;
+  --glass: rgba(255,255,255,0.6);
+  --shadow: 0 6px 18px rgba(15,23,42,0.06);
+  --radius: 12px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg,var(--bg), #eef2f7);
+  color:#0f172a;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  line-height:1.45;
+  padding:24px;
+}
+
+/* Page wrapper */
+header[role=banner]{
+  max-width:1100px;
+  margin:0 auto 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.5));
+  border-radius: var(--radius);
+  padding:18px 22px;
+  box-shadow: var(--shadow);
+}
+header h1{margin:0 0 10px;font-size:1.5rem}
+
+/* Indicators section */
+[aria-label="Ukazovatele miláčika"]{
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+[aria-label="Ukazovatele miláčika"] > div{
+  min-width:180px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+[aria-label="Ukazovatele miláčika"] label{min-width:70px;font-weight:600;color:var(--muted)}
+[aria-label="Ukazovatele miláčika"] span{min-width:36px;text-align:right;color:var(--muted);font-weight:600}
+
+/* Style native progress elements nicely */
+progress{
+  -webkit-appearance:none;
+  appearance:none;
+  width:140px;
+  height:12px;
+  border-radius:10px;
+  overflow:hidden;
+  background: linear-gradient(90deg,#e6eaf3,#f6f8fc);
+  border:1px solid rgba(15,23,42,0.04);
+}
+
+/* WebKit (Chrome, Safari) */
+progress::-webkit-progress-bar{background:transparent}
+progress::-webkit-progress-value{
+  border-radius:10px;
+  background: linear-gradient(90deg,var(--accent), #4b7ef0);
+  box-shadow: inset 0 -2px 0 rgba(255,255,255,0.15);
+}
+
+/* Firefox */
+progress::-moz-progress-bar{
+  border-radius:10px;
+  background: linear-gradient(90deg,var(--accent), #4b7ef0);
+}
+
+/* Simple separator */
+hr{border:0;height:1px;background:linear-gradient(90deg,transparent,#e6eaf3,transparent);margin:16px 0}
+
+/* Main container */
+.pou-container{
+  max-width:1100px;
+  margin:0 auto 22px;
+  background:var(--card);
+  padding:18px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  display:flex;
+  gap:18px;
+  align-items:center;
+}
+.pou-container h2{margin:0;font-size:1.25rem}
+.pou-container img{
+  width:96px;
+  height:96px;
+  object-fit:contain;
+  border-radius:12px;
+  background:linear-gradient(180deg,#fff,#f3f6ff);
+  padding:6px;
+  box-shadow: 0 6px 18px rgba(50,60,80,0.06);
+}
+
+/* Stylized fallback bars (the simple divs in your HTML) */
+div[style*="border: 1px solid black"]{
+  background:linear-gradient(90deg,#fff,#f7fafc);
+  height:20px;
+  width:200px;
+  border-radius:8px;
+  overflow:hidden;
+  position:relative;
+  border:1px solid rgba(15,23,42,0.06);
+}
+/* add pseudo fill to show approximate values via inline style classes later */
+.filler{height:100%;background:linear-gradient(90deg,var(--accent-2), #34d399);width:60%;}
+
+/* Rooms and navigation */
+h2{margin-top:8px}
+section, article, main{max-width:1100px;margin:0 auto}
+
+/* Navigation buttons */
+a{text-decoration:none}
+button{
+  background:var(--accent);
+  color:white;
+  border:0;
+  padding:10px 14px;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow:0 6px 14px rgba(75,126,240,0.18);
+}
+button:focus{outline:3px solid rgba(107,158,246,0.18)}
+
+/* Room images */
+#kuchyna img, #kupelna img, #hracia img, #spalna img{
+  border-radius:10px;
+  box-shadow:var(--shadow);
+  margin-top:8px;
+}
+
+/* Layout for small screens */
+@media (max-width:720px){
+  [aria-label="Ukazovatele miláčika"]{justify-content:space-between}
+  .pou-container{flex-direction:row;gap:12px}
+  .pou-container img{width:80px;height:80px}
+  button{padding:8px 10px;font-size:0.95rem}
+}
+
+/* Utility classes */
+.center{display:flex;justify-content:center;align-items:center}
+.muted{color:var(--muted)}
+
+/* tiny accessible helper for visually-hidden text */
+.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
+
+

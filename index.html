@@ -3,76 +3,94 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Černý pou</title>
+  <title>Pou Ultimate — verzia</title>
   <link rel="stylesheet" href="matcha.css">
-  <script src="ragna.js"></script>
-
-
 </head>
 <body>
-<header role="banner">
-<h1>Pou pičus 2</h1>
-<section aria-label="Ukazovatele miláčika">
-<div><label>Jedlo</label><progress id="need-food" max="100" value="100"></progress><span id="val-food">100</span></div>
-<div><label>Sprcha</label><progress id="need-clean" max="100" value="100"></progress><span id="val-clean">100</span></div>
-<div><label>Zábava</label><progress id="need-fun" max="100" value="100"></progress><span id="val-fun">100</span></div>
-<div><label>Spánok</label><progress id="need-sleep" max="100" value="100"></progress><span id="val-sleep">100</span></div>
-<div><label>Peniaze</label><span id="money">0</span></div>
-</section>
-</header>
+  <header role="banner" class="banner">
+    <h1>Môj Pou — Ultimate</h1>
 
+    <section aria-label="Ukazovatele miláčika" class="indicators">
+      <div>
+        <label for="hunger">Hlad:</label>
+        <progress id="hunger" value="60" max="100">60%</progress>
+        <span id="hunger-val">60%</span>
+      </div>
 
-<main class="pou-container">
-<img id="pou" src="pou.png" alt="Pou" />
-<div>
-<h2>Miestnosť</h2>
-<img id="room" src="room-living.png" alt="Miestnosť" />
-<br />
-<button onclick="changeRoom('kitchen')">Kuchyňa</button>
-<button onclick="changeRoom('bathroom')">Kúpeľňa</button>
-<button onclick="changeRoom('play')">Herná</button>
-<button onclick="changeRoom('sleep')">Spálňa</button>
-</div>
-</main>
+      <div>
+        <label for="health">Zdravie:</label>
+        <progress id="health" value="85" max="100">85%</progress>
+        <span id="health-val">85%</span>
+      </div>
 
+      <div>
+        <label for="sleep">Ospalosť:</label>
+        <progress id="sleep" value="30" max="100">30%</progress>
+        <span id="sleep-val">30%</span>
+      </div>
 
-<section>
-<h2>Interakcie</h2>
-<button onclick="feedPou()">Nakrmiť</button>
-<button onclick="washPou()">Sprchovať</button>
-<button onclick="playWithPou()">Hrať sa</button>
-<button onclick="sleepPou()">Uspať</button>
-</section>
+      <div>
+        <label for="fun">Zábava:</label>
+        <progress id="fun" value="72" max="100">72%</progress>
+        <span id="fun-val">72%</span>
+      </div>
 
+      <div>
+        <label for="faith">Viera:</label>
+        <progress id="faith" value="10" max="100">10%</progress>
+        <span id="faith-val">10%</span>
+      </div>
 
-    <hr>
+      <div>
+        <label for="toilet">WC:</label>
+        <progress id="toilet" value="30" max="100">30%</progress>
+        <span id="toilet-val">30%</span>
+      </div>
+    </section>
 
-    <!-- KUCHYŇA -->
-    <h2 id="kuchyna">Kuchyňa</h2>
-    <p>Sem vlož svoj obrázok Pou:</p>
-    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou" width="200">
+    <div class="header-right">
+      <div id="coins" aria-live="polite">💠 20¢</div>
+      <button id="saveBtn" class="small">Uložiť</button>
+      <button id="resetBtn" class="small danger">Reset</button>
+    </div>
 
-    <p>V kuchyni môžeš vidieť Pou pri jedle (len vizuálne).</p>
-    <hr>
+  </header>
 
-    <!-- KÚPEĽŇA -->
-    <h2 id="kupelna">Kúpeľňa</h2>
-    <p>Kúpeľňová verzia Pou obrázka:</p>
-    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou" width="200">
+  <main class="pou-container">
+    <div class="left">
+      <h2 id="room-title">Domov</h2>
+      <img id="pou-img" src="https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/pou.png" alt="Pou">
+      <div id="desc" class="muted">Klikni na miestnosť nižšie alebo na Pou.</div>
+    </div>
 
-    <hr>
+    <div class="right">
+      <div class="rooms">
+        <button data-room="kuchyna">Kuchyňa</button>
+        <button data-room="kupelna">Kúpeľňa</button>
+        <button data-room="hracia">Hracia miestnosť</button>
+        <button data-room="spalna">Spálňa</button>
+        <button data-room="praca">Práca</button>
+        <button data-room="casino">Casino (minihry)</button>
+        <button data-room="wc">WC</button>
+        <button data-room="church">Kostol</button>
+        <button data-room="market">Marketplace</button>
+      </div>
 
-    <!-- HRACIA MIESTNOSŤ -->
-    <h2 id="hracia">Hracia miestnosť</h2>
-    <p>Tu je Pou v hracej miestnosti (obrázok je rovnaký, ty si ho môžeš zmeniť):</p>
-    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou" width="200">
-    <hr>
+      <div id="room-view" class="room-view">
+        <img id="room-img" src="" alt="Miestnosť" class="room-img">
+        <div id="actions" class="actions"></div>
+      </div>
+    </div>
+  </main>
 
-    <!-- SPÁLŇA -->
-    <h2 id="spalna">Spálňa</h2>
-    <p>Pou v spálni:</p>
-    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou" width="200">
+  <!-- modal area for minigames / prompts -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-inner">
+      <button id="modal-close" class="modal-close">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="ragna.js"></script>
 </body>
 </html>
-pou.html
-4 KB

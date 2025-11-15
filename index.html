@@ -1,11 +1,103 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Best POU GAME LIKE </title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Černý pou</title>
 </head>
 <body>
+  <!-- Horný panel ukazovateľov (len HTML, bez CSS/JS) -->
+  <header role="banner">
+    <h1>Môj Pou</h1>
+
+    <!-- Používame natívne HTML5 progress prvky (žiadne CSS) -->
+    <section aria-label="Ukazovatele miláčika">
+      <div>
+        <label for="hunger">Hlad:</label>
+        <progress id="hunger" value="60" max="100">60%</progress>
+        <span>60%</span>
+      </div>
+
+      <div>
+        <label for="health">Zdravie:</label>
+        <progress id="health" value="85" max="100">85%</progress>
+        <span>85%</span>
+      </div>
+
+      <div>
+        <label for="sleep">Ospalosť:</label>
+        <progress id="sleep" value="30" max="100">30%</progress>
+        <span>30%</span>
+      </div>
+
+      <div>
+        <label for="fun">Zábava:</label>
+        <progress id="fun" value="72" max="100">72%</progress>
+        <span>72%</span>
+      </div>
+    </section>
+
+    <hr />
+  </header>
+
+<div class="pou-container">
+    <h2>Môj Pou</h2>
     
+    <!-- TU VYMENÍŠ OBRÁZOK ZA HOCIJAKE URL -->
+    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou">
+</div>
+
+<div>
+        <p>Hlad:</p>
+        <div style="border: 1px solid black; width: 200px; height: 20px;"></div>
+
+        <p>Zdravie:</p>
+        <div style="border: 1px solid black; width: 200px; height: 20px;"></div>
+
+        <p>Ospalosť:</p>
+        <div style="border: 1px solid black; width: 200px; height: 20px;"></div>
+
+        <p>Zábava:</p>
+        <div style="border: 1px solid black; width: 200px; height: 20px;"></div>
+    </div>
+
+    <hr>
+
+    <!-- Navigácia medzi miestnosťami -->
+    <h2>Miestnosti</h2>
+    <a href="#kuchyna"><button>Kuchyňa</button></a>
+    <a href="#kupelna"><button>Kúpeľňa</button></a>
+    <a href="#hracia"><button>Hracia miestnosť</button></a>
+    <a href="#spalna"><button>Spálňa</button></a>
+
+    <hr>
+
+    <!-- KUCHYŇA -->
+    <h2 id="kuchyna">Kuchyňa</h2>
+    <p>Sem vlož svoj obrázok Pou:</p>
+    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou" width="200">
+
+    <p>V kuchyni môžeš vidieť Pou pri jedle (len vizuálne).</p>
+    <hr>
+
+    <!-- KÚPEĽŇA -->
+    <h2 id="kupelna">Kúpeľňa</h2>
+    <p>Kúpeľňová verzia Pou obrázka:</p>
+    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou" width="200">
+
+    <hr>
+
+    <!-- HRACIA MIESTNOSŤ -->
+    <h2 id="hracia">Hracia miestnosť</h2>
+    <p>Tu je Pou v hracej miestnosti (obrázok je rovnaký, ty si ho môžeš zmeniť):</p>
+    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou" width="200">
+    <hr>
+
+    <!-- SPÁLŇA -->
+    <h2 id="spalna">Spálňa</h2>
+    <p>Pou v spálni:</p>
+    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou" width="200">
 </body>
 </html>
+pou.html
+4 KB

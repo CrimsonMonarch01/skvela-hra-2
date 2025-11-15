@@ -10,57 +10,40 @@
 
 </head>
 <body>
-  <!-- Horný panel ukazovateľov (len HTML, bez CSS/JS) -->
-  <header role="banner">
-    <h1>Môj Pou</h1>
+<header role="banner">
+<h1>Pou pičus 2</h1>
+<section aria-label="Ukazovatele miláčika">
+<div><label>Jedlo</label><progress id="need-food" max="100" value="100"></progress><span id="val-food">100</span></div>
+<div><label>Sprcha</label><progress id="need-clean" max="100" value="100"></progress><span id="val-clean">100</span></div>
+<div><label>Zábava</label><progress id="need-fun" max="100" value="100"></progress><span id="val-fun">100</span></div>
+<div><label>Spánok</label><progress id="need-sleep" max="100" value="100"></progress><span id="val-sleep">100</span></div>
+<div><label>Peniaze</label><span id="money">0</span></div>
+</section>
+</header>
 
-    <!-- Používame natívne HTML5 progress prvky (žiadne CSS) -->
-    <section aria-label="Ukazovatele miláčika">
-      <div>
-        <label for="hunger">Hlad:</label>
-        <progress id="hunger" value="60" max="100">60%</progress>
-        <span>60%</span>
-      </div>
 
-      <div>
-        <label for="health">Zdravie:</label>
-        <progress id="health" value="85" max="100">85%</progress>
-        <span>85%</span>
-      </div>
-
-      <div>
-        <label for="sleep">Ospalosť:</label>
-        <progress id="sleep" value="30" max="100">30%</progress>
-        <span>30%</span>
-      </div>
-
-      <div>
-        <label for="fun">Zábava:</label>
-        <progress id="fun" value="72" max="100">72%</progress>
-        <span>72%</span>
-      </div>
-    </section>
-
-    <hr />
-  </header>
-
-<div class="pou-container">
-    <h2>Môj Pou</h2>
-    
-    <!-- TU VYMENÍŠ OBRÁZOK ZA HOCIJAKE URL -->
-    <img src="https://media.tenor.com/_AJBzpzZCV8AAAAe/pou-2.png" alt="pou">
+<main class="pou-container">
+<img id="pou" src="pou.png" alt="Pou" />
+<div>
+<h2>Miestnosť</h2>
+<img id="room" src="room-living.png" alt="Miestnosť" />
+<br />
+<button onclick="changeRoom('kitchen')">Kuchyňa</button>
+<button onclick="changeRoom('bathroom')">Kúpeľňa</button>
+<button onclick="changeRoom('play')">Herná</button>
+<button onclick="changeRoom('sleep')">Spálňa</button>
 </div>
+</main>
 
 
+<section>
+<h2>Interakcie</h2>
+<button onclick="feedPou()">Nakrmiť</button>
+<button onclick="washPou()">Sprchovať</button>
+<button onclick="playWithPou()">Hrať sa</button>
+<button onclick="sleepPou()">Uspať</button>
+</section>
 
-    <hr>
-
-    <!-- Navigácia medzi miestnosťami -->
-    <h2>Miestnosti</h2>
-    <a href="#kuchyna"><button>Kuchyňa</button></a>
-    <a href="#kupelna"><button>Kúpeľňa</button></a>
-    <a href="#hracia"><button>Hracia miestnosť</button></a>
-    <a href="#spalna"><button>Spálňa</button></a>
 
     <hr>
 

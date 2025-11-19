@@ -9,14 +9,14 @@ const DEC = { sleep: 2, clean: 3, hunger: 6, fun: 8, faith: 1, toilet: 4 };
 
 const ROOM_ASSETS = {
   defaultRoom: '',
-  kuchyna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kuchyna.png',
-  kupelna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kupelna.jpg',
-  hracia: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/hracia%20miestnost.png',
-  spalna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/spalna.jpg',
-  praca: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kancelaria%20s%20papiermi.png',
-  casino: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/casino.png',
-  wc: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/WC.png',
-  church: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTC7wGAw7BOpier7nIY8OtnWOibN2_spHCtMA&s',
+  kuchyna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kuchyna.png?raw=true',
+  kupelna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kupelna.jpg?raw=true',
+  hracia: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/hracia%20miestnost.png?raw=true',
+  spalna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/spalna.jpg?raw=true',
+  praca: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kancelaria-20s%20papiermi.png?raw=true',
+  casino: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/casino.png?raw=true',
+  wc: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/WC.png?raw=true',
+  church: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kostol.png?raw=true',
   market: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTC7wGAw7BOpier7nIY8OtnWOibN2_spHCtMA&s'
 };
 

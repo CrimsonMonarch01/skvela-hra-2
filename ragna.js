@@ -400,17 +400,7 @@ function ssum(arr){
   while(sum>21 && aces>0){ sum -= 10; aces--; }
   return sum;
 }
-// --- definícia na globálnej úrovni (alebo tak, kde je dostupné) ---
-let decayRate = 0.01; // príklad: 0.01 = 1% za tick (upravte podľa svojho kódu)
-const DECAY_BOOST_INTERVAL_MS = 20000; // 20 sekúnd
 
-// --- toto spustite pri štarte hry ---
-setInterval(() => {
-  // zvýši decayRate o náhodných 1% až 2% (multiplikatívne)
-  const boostPercent = 0.01 + Math.random() * 0.01; // 0.01..0.02
-  decayRate = (1 + boostPercent);
-  console.log('Decay boosted by', (boostPercent100).toFixed(2) + '% — new decayRate:', decayRate);
-}, DECAY_BOOST_INTERVAL_MS);
 
 /* ---------- MODAL helpers ---------- */
 function showModal(html){

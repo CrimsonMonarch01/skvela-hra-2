@@ -1,52 +1,96 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pou Ultimate</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pou Ultimate — verzia</title>
+  <link rel="stylesheet" href="matcha.css">
 </head>
 <body>
+  <header role="banner" class="banner">
+    <h1>Môj Pou — Ultimate</h1>
 
-<div class="banner">
-  <h1>Pou Ultimate</h1>
-  <div class="indicators">
-    <div><label>Hlad</label><progress id="food" max="100" value="100"></progress><span id="food-val">100%</span></div>
-    <div><label>Zdravie</label><progress id="health" max="100" value="100"></progress><span id="health-val">100%</span></div>
-    <div><label>Zábava</label><progress id="fun" max="100" value="100"></progress><span id="fun-val">100%</span></div>
-    <div><label>Ospalosť</label><progress id="sleep" max="100" value="0"></progress><span id="sleep-val">0%</span></div>
+    <section aria-label="Ukazovatele miláčika" class="indicators">
+      <div>
+        <label for="hunger">Hlad:</label>
+        <progress id="hunger" value="60" max="100">60%</progress>
+        <span id="hunger-val">60%</span>
+      </div>
+
+      <div>
+        <label for="health">Zdravie:</label>
+        <progress id="health" value="85" max="100">85%</progress>
+        <span id="health-val">85%</span>
+      </div>
+
+      <div>
+        <label for="sleep">Ospalosť:</label>
+        <progress id="sleep" value="30" max="100">30%</progress>
+        <span id="sleep-val">30%</span>
+      </div>
+
+      <div>
+        <label for="fun">Zábava:</label>
+        <progress id="fun" value="72" max="100">72%</progress>
+        <span id="fun-val">72%</span>
+      </div>
+
+      <div>
+        <label for="faith">Viera:</label>
+        <progress id="faith" value="10" max="100">10%</progress>
+        <span id="faith-val">10%</span>
+      </div>
+
+      <div>
+        <label for="toilet">WC:</label>
+        <progress id="toilet" value="30" max="100">30%</progress>
+        <span id="toilet-val">30%</span>
+      </div>
+    </section>
+
+    <div class="header-right">
+      <div id="coins" aria-live="polite">💠 20¢</div>
+      <button id="saveBtn" class="small">Uložiť</button>
+      <button id="resetBtn" class="small danger">Reset</button>
+    </div>
+
+  </header>
+
+  <main class="pou-container">
+    <div class="left">
+      <h2 id="room-title">Domov</h2>
+      <img id="pou-img" src="https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/pou.png" alt="Pou">
+      <div id="desc" class="muted">Klikni na miestnosť nižšie alebo na Pou.</div>
+    </div>
+
+    <div class="right">
+      <div class="rooms">
+        <button data-room="kuchyna">Kuchyňa</button>
+        <button data-room="kupelna">Kúpeľňa</button>
+        <button data-room="hracia">Hracia miestnosť</button>
+        <button data-room="spalna">Spálňa</button>
+        <button data-room="praca">Práca</button>
+        <button data-room="casino">Casino (minihry)</button>
+        <button data-room="wc">WC</button>
+        <button data-room="church">Kostol</button>
+        <button data-room="market">Marketplace</button>
+      </div>
+
+      <div id="room-view" class="room-view">
+        <img id="room-img" src="" alt="Miestnosť" class="room-img">
+        <div id="actions" class="actions"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- modal area for minigames / prompts -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-inner">
+      <button id="modal-close" class="modal-close">✕</button>
+      <div id="modal-content"></div>
+    </div>
   </div>
-  <button id="dark-toggle" class="small">Dark Mode</button>
-</div>
 
-<div class="pou-container">
-  <div class="left">
-    <div class="pou-wrapper">
-      <img id="pou" src="sprites/pou.png" alt="Pou" />
-    </div>
-    <div class="actions">
-      <button onclick="feedPou()">Nakrmiť</button>
-      <button onclick="washPou()">Umyť</button>
-      <button onclick="playPou()">Zabaviť</button>
-      <button onclick="sleepPou()">Uspať</button>
-    </div>
-  </div>
-
-  <div class="right">
-    <div class="rooms">
-      <button onclick="changeRoom('living')">Obývačka</button>
-      <button onclick="changeRoom('kitchen')">Kuchyňa</button>
-      <button onclick="changeRoom('bathroom')">Kúpeľňa</button>
-      <button onclick="changeRoom('sleep')">Spálňa</button>
-      <button onclick="changeRoom('play')">Hra</button>
-    </div>
-    <div class="room-view">
-      <img id="room-img" class="room-img" src="rooms/living.png" alt="Miesto" />
-      <img id="pou-overlay" class="pou-overlay" src="sprites/pou.png" />
-    </div>
-  </div>
-</div>
-
-<script src="game.js"></script>
+  <script src="ragna.js"></script>
 </body>
 </html>

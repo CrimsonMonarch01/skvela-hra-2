@@ -75,5 +75,4 @@ progress::-moz-progress-bar{border-radius:10px;background: linear-gradient(90deg
 /* responsive */
 @media (max-width:720px){
   .pou-container{flex-direction:column;align-items:center}
-  .rooms{justify-content:center}
-}
+  .rooms{justify-content:center}}

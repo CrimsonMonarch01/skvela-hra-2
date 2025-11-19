@@ -3,7 +3,7 @@
    ============================ */
 
 /* ---------- CONFIG ---------- */
-const TICK_MS = 120000; // 2 minúty
+const TICK_MS = 20000; // 2 minúty
 // Ubúdanie za tick: sleep najpomalšie, clean druhé najmenej, hunger druhé najviac, fun najviac
 const DEC = { sleep: 2, clean: 3, hunger: 6, fun: 8, faith: 1, toilet: 4 };
 

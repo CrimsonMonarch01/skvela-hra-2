@@ -34,6 +34,52 @@ const DEFAULT = {
   lastTick: Date.now()
 };
 let state = loadState();
+// gameover
+let health = 100; // alebo odkiaľ to máte
+let gameRunning = true;
+let gameIntervals = []; // ak si ukladáte ID intervalov, aby ste ich mohli vyčistiť
+
+function startGame() {
+  gameRunning = true;
+  // napr. ukladanie intervalov:
+  gameIntervals.push(setInterval(gameTick, 1000/30));
+  // ... ostatné intervaly
+}
+
+function stopAllIntervals() {
+  gameIntervals.forEach(id => clearInterval(id));
+  gameIntervals = [];
+}
+
+function gameOver() {
+  if (!gameRunning) return;
+  gameRunning = false;
+  stopAllIntervals();
+  // zobraz overlay / reset / tlačidlo restart
+  const overlay = document.createElement('div');
+  overlay.id = 'gameOverOverlay';
+  overlay.style = 
+    position='fixed; inset:0; display:flex; align-items:center; justify-content:center';
+    'background: rgba(0,0,0,0.6); color: white; font-size: 32px; z-index:9999'
+  
+  overlay.innerHTML = '<div>GAME OVER<br><button id="restartBtn">RESTART</button></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    overlay.remove();
+    location.reload(); // jednoduchý restart; alebo zavolajte svoju reset funkciu
+  });
+}
+
+function changeHealth(delta) {
+  health += delta;
+  if (health <= 0) {
+    health = 0;
+    gameOver();
+  }
+  // aktualizovať UI bar
+  const healthBar = document.getElementById('healthBar');
+  if (healthBar) healthBar.style.width = Math.max(0, health) + '%';
+}
 
 /* ---------- UTIL ---------- */
 const q = sel => document.querySelector(sel);

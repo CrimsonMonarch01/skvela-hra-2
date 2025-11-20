@@ -15,7 +15,7 @@ const ROOM_ASSETS = {
   casino: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/casino.png',
   wc: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/WC.png',
   church: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/kostol.png',
-  market: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/market.jpg'
+  market: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/refs/heads/main/colored-realistic-design-snacks-vending-machine-with-electronic-control-panel-isolated_1284-30751.avif'
 };
 
 const STORAGE_KEY = 'pou_konsolidacia_v999';

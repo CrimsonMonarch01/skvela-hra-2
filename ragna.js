@@ -1,8 +1,8 @@
 /* ============================
-   RAGNA.JS — Pou Ultimate (OPRAVENÁ VERZIA s KONSOLIDÁCIOU + CASINO OBRÁZKY)
+   RAGNA.JS — Pou Ultimate (FINÁLNA VERZIA 2025 – všetko opravené)
    ============================ */
 
-const TICK_MS = 120000;
+const TICK_MS = 120000; // 2 minúty na tick
 const DEC = { sleep: 3, hunger: 7, fun: 9, faith: 1, toilet: 5 };
 
 const ROOM_ASSETS = {
@@ -34,15 +34,40 @@ let tickInterval = null;
 /* ========== UTIL ========== */
 const q = s => document.querySelector(s);
 const qa = s => Array.from(document.querySelectorAll(s));
-function clamp(v, a=0, b=100) { return Math.max(a, Math.min(b, v)); }
+function clamp(v, a = 0, b = 100) { return Math.max(a, Math.min(b, v)); }
 function fmtCoins(n) { return ` ${n}¢`; }
 
+/* ========== BEZPEČNÉ NAČÍTANIE SAVE-U ========== */
 function loadState() {
-  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); }
-  catch(e) { console.warn(e); }
-  return {};
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return {};
+
+    const data = JSON.parse(saved);
+
+    // Ak je Pou mŕtvy alebo bol offline viac ako 24h → reset
+    if (data.health <= 0) {
+      console.log("Pou bol mŕtvy → nová hra");
+      localStorage.removeItem(STORAGE_KEY);
+      return {};
+    }
+    const offlineHours = (Date.now() - data.lastTick) / (1000 * 60 * 60);
+    if (offlineHours > 24) {
+      console.log("Príliš dlho offline → nová hra");
+      localStorage.removeItem(STORAGE_KEY);
+      return {};
+    }
+    return data;
+  } catch (e) {
+    console.warn("Chyba v save → reset", e);
+    localStorage.removeItem(STORAGE_KEY);
+    return {};
+  }
 }
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
 
 /* ========== FLASH & ALERT ========== */
 function flash(text, time = 4000) {
@@ -53,7 +78,8 @@ function flash(text, time = 4000) {
     document.body.appendChild(f);
   }
   f.innerHTML = text; f.style.opacity = '1';
-  clearTimeout(f.to); f.to = setTimeout(() => f.style.opacity = '0', time);
+  clearTimeout(f.to);
+  f.to = setTimeout(() => f.style.opacity = '0', time);
 }
 
 function showAlert(title, message) {
@@ -91,7 +117,7 @@ function buyGana() {
   if (state.coins < 9999) return flash('Chýba ti presne 1¢ na ganu... smola');
   state.coins -= 9999;
   state.hasGana = true;
-  state.eventKonsolidacia = false; // Event končí po kúpe gany
+  state.eventKonsolidacia = false;
   if (q('#eventBanner')) q('#eventBanner').remove();
   flash('KÚPIL SI SI GANU<br>Teraz máš dve možnosti...', 6000);
   setTimeout(() => {
@@ -112,15 +138,14 @@ function getPrice(base) {
 
 /* ========== RENDER ========== */
 function renderAll() {
-  q('#hunger').value = state.hunger; q('#hunger-val').textContent = Math.round(state.hunger)+'%';
-  q('#health').value = state.health; q('#health-val').textContent = Math.round(state.health)+'%';
-  q('#sleep').value = state.sleep; q('#sleep-val').textContent = Math.round(state.sleep)+'%';
-  q('#fun').value = state.fun; q('#fun-val').textContent = Math.round(state.fun)+'%';
-  q('#faith').value = state.faith; q('#faith-val').textContent = Math.round(state.faith)+'%';
-  q('#toilet').value = state.toilet; q('#toilet-val').textContent = Math.round(state.toilet)+'%';
+  q('#hunger').value = state.hunger; q('#hunger-val').textContent = Math.round(state.hunger) + '%';
+  q('#health').value = state.health; q('#health-val').textContent = Math.round(state.health) + '%';
+  q('#sleep').value = state.sleep; q('#sleep-val').textContent = Math.round(state.sleep) + '%';
+  q('#fun').value = state.fun; q('#fun-val').textContent = Math.round(state.fun) + '%';
+  q('#faith').value = state.faith; q('#faith-val').textContent = Math.round(state.faith) + '%';
+  q('#toilet').value = state.toilet; q('#toilet-val').textContent = Math.round(state.toilet) + '%';
   q('#coins').textContent = fmtCoins(state.coins);
 
-  // Zásoba jedla
   let foodEl = q('#foodInfo');
   if (!foodEl) {
     foodEl = document.createElement('div'); foodEl.id = 'foodInfo';
@@ -128,7 +153,6 @@ function renderAll() {
   }
   foodEl.innerHTML = `Jedlo: ${state.foodStock} porcií` + (state.eventKonsolidacia ? ' <span style="color:#f33">(KONSOLIDÁCIA!)</span>' : '');
 
-  // Event banner
   if (state.eventKonsolidacia) {
     let ev = q('#eventBanner');
     if (!ev) {
@@ -137,9 +161,7 @@ function renderAll() {
       ev.textContent = 'KONSOLIDÁCIA – ceny +75%!';
       document.body.appendChild(ev);
     }
-  } else {
-    if (q('#eventBanner')) q('#eventBanner').remove();
-  }
+  } else if (q('#eventBanner')) q('#eventBanner').remove();
 
   q('#room-title').textContent = state.currentRoom ? state.currentRoom.charAt(0).toUpperCase() + state.currentRoom.slice(1) : 'Domov';
   q('#room-img').src = state.currentRoom ? (ROOM_ASSETS[state.currentRoom] || ROOM_ASSETS.defaultRoom) : ROOM_ASSETS.defaultRoom;
@@ -150,12 +172,10 @@ function renderAll() {
   if (state.health <= 0) setTimeout(gameOver, 1000);
 }
 
-/* ========== CASINO MINIGAMES S OBRÁZKAMI ========== */
-
-// Sloty s obrázkami
+/* ========== CASINO MINIGAMES ========== */
 function openSlots() {
   showModal(`
-    <h3>🎰 Sloty</h3>
+    <h3>Sloty</h3>
     <img src="https://cdn-icons-png.flaticon.com/512/3078/3078241.png" style="width:200px;margin:10px auto;display:block;">
     <p>Stávka: <input id="slotBet" type="number" min="1" value="15" style="width:80px">¢</p>
     <button id="slotSpin" style="padding:12px 30px;font-size:18px;background:#900;color:white;border:none;border-radius:10px;">Točiť!</button>
@@ -165,29 +185,22 @@ function openSlots() {
     const bet = Math.max(1, +q('#slotBet').value);
     if (state.coins < bet) return flash('Málo peňazí!');
     state.coins -= bet;
-    const symbols = [
-      {name:'🍒', img:'https://cdn-icons-png.flaticon.com/512/3078/3078241.png'},
-      {name:'🍋', img:'https://cdn-icons-png.flaticon.com/512/3078/3078240.png'},
-      {name:'🔔', img:'https://cdn-icons-png.flaticon.com/512/3078/3078239.png'},
-      {name:'⭐', img:'https://cdn-icons-png.flaticon.com/512/3078/3078238.png'},
-      {name:'💎', img:'https://cdn-icons-png.flaticon.com/512/3078/3078237.png'}
-    ];
-    const a = symbols[Math.floor(Math.random()*symbols.length)];
-    const b = symbols[Math.floor(Math.random()*symbols.length)];
-    const c = symbols[Math.floor(Math.random()*symbols.length)];
-    q('#slotRes').innerHTML = `<img src="${a.img}" style="width:60px;height:60px;"> <img src="${b.img}" style="width:60px;height:60px;"> <img src="${c.img}" style="width:60px;height:60px;"><br>${a.name} ${b.name} ${c.name}`;
+    const symbols = ['Cherry', 'Lemon', 'Bell', 'Star', 'Diamond'];
+    const a = symbols[Math.floor(Math.random()*5)];
+    const b = symbols[Math.floor(Math.random()*5)];
+    const c = symbols[Math.floor(Math.random()*5)];
+    q('#slotRes').textContent = `${a} ${b} ${c}`;
     let win = 0;
-    if (a.name===b.name && b.name===c.name) { win = bet*20; flash(`JACKPOT! +${win}¢`); }
-    else if (a.name===b.name || b.name===c.name || a.name===c.name) { win = bet*4; flash(`Výhra +${win}¢!`); }
+    if (a===b && b===c) { win = bet*20; flash(`JACKPOT! +${win}¢`); }
+    else if (a===b || b===c || a===c) { win = bet*4; flash(`Výhra +${win}¢!`); }
     if (win > 0) state.coins += win;
     renderAll();
   };
 }
 
-// Ruleta s obrázkom
 function openRoulette() {
   showModal(`
-    <h3>🎡 Ruleta</h3>
+    <h3>Ruleta</h3>
     <img src="https://www.rawpixel.com/image/12610167/png-casino-roulette-wheel-gambling-casino-game-generated-image-rawpixel.png" style="width:250px;margin:10px auto;display:block;border-radius:50%;">
     <p>Stávka: <input id="rouletteBet" type="number" min="1" value="20" style="width:80px">¢</p>
     <input id="rouletteChoice" placeholder="číslo 0-36 alebo red/black" style="width:220px;padding:8px;margin:5px;"><br><br>
@@ -205,17 +218,16 @@ function openRoulette() {
     if (!isNaN(choice) && +choice === roll) win = bet*35;
     else if (choice==='red' && color==='červená') win = bet*2;
     else if (choice==='black' && color==='čierna') win = bet*2;
-    q('#rouletteRes').innerHTML = `<img src="https://www.rawpixel.com/image/12610167/png-casino-roulette-wheel-gambling-casino-game-generated-image-rawpixel.png" style="width:100px;height:100px;margin:10px;"> Padlo: <strong>${roll} (${color})</strong><br>`;
+    q('#rouletteRes').innerHTML = `Padlo: <strong>${roll} (${color})</strong><br>`;
     if (win>0) { state.coins += win; q('#rouletteRes').innerHTML += `<span style="color:#90ee90">VÝHRA +${win}¢!</span>`; }
     else q('#rouletteRes').innerHTML += '<span style="color:#ff4444">Prehra</span>';
     renderAll();
   };
 }
 
-// Blackjack s obrázkami kariet
 function openBlackjack() {
   showModal(`
-    <h3>🃏 Blackjack</h3>
+    <h3>Blackjack</h3>
     <img src="https://img.freepik.com/free-vector/playing-cards_1284-1537.jpg" style="width:200px;margin:10px auto;display:block;">
     <p>Stávka: <input id="bjBet" type="number" min="1" value="25" style="width:80px">¢</p>
     <button id="bjStart" style="padding:12px 30px;font-size:18px;background:#900;color:white;border:none;border-radius:10px;">Začať hru</button>
@@ -224,18 +236,18 @@ function openBlackjack() {
   `);
   let playerHand = [], dealerHand = [], deck = [];
   function createDeck() {
-    const suits = ['♥', '♦', '♣', '♠'];
-    const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    const suits = ['♥','♦','♣','♠'];
+    const values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
     deck = [];
-    for (let s of suits) for (let v of values) deck.push({suit: s, value: v, img: `https://img.freepik.com/free-vector/playing-card_${v.toLowerCase()}${s.toLowerCase()}.png` || 'https://via.placeholder.com/60x90?text='+v+s});
-    deck = deck.sort(() => Math.random() - 0.5);
-  }
-  function handValue(hand) {
-    let val = 0, aces = 0;
-    for (let card of hand) {
-      if (card.value === 'A') { aces++; val += 11; } else if (['J','Q','K'].includes(card.value)) val += 10; else val += parseInt(card.value);
+    for (let s of suits) for (let v of values) {
+      deck.push({suit:s,value:v,img:`https://deckofcards.apiwick.com/cards/${v}${s === '♥'?'h':s==='♦'?'d':s==='♣'?'c':'s'}.png`});
     }
-    while (val > 21 && aces > 0) { val -= 10; aces--; }
+    deck.sort(() => Math.random() - 0.5);
+  }
+  function handValue(h) {
+    let val = 0, aces = 0;
+    for (let c of h) { if (c.value==='A') {aces++; val+=11;} else if (['J','Q','K'].includes(c.value)) val+=10; else val+=parseInt(c.value); }
+    while (val > 21 && aces--) val -= 10;
     return val;
   }
   q('#bjStart').onclick = () => {
@@ -245,36 +257,34 @@ function openBlackjack() {
     createDeck();
     playerHand = [deck.pop(), deck.pop()];
     dealerHand = [deck.pop(), deck.pop()];
-    q('#bjResult').innerHTML = `Tvoja ruka: ${playerHand.map(c => `<img src="${c.img}" style="width:60px;height:90px;"> ${c.value}${c.suit}`).join(' ')} (=${handValue(playerHand)})<br>Dealer: <img src="${dealerHand[0].img}" style="width:60px;height:90px;"> ?`;
+    q('#bjResult').innerHTML = `Tvoja ruka: ${playerHand.map(c=>`<img src="${c.img}" style="width:60px;height:90px;">`).join('')} (=${handValue(playerHand)})<br>Dealer: <img src="${dealerHand[0].img}" style="width:60px;height:90px;"> ?`;
     const controls = q('#bjControls'); controls.innerHTML = '';
-    const hit = document.createElement('button'); hit.textContent = 'Hit'; hit.style.cssText = 'padding:10px 20px;margin:5px;background:#090;color:white;border:none;border-radius:5px;';
-    const stand = document.createElement('button'); stand.textContent = 'Stand'; stand.style.cssText = 'padding:10px 20px;margin:5px;background:#900;color:white;border:none;border-radius:5px;';
-    controls.appendChild(hit); controls.appendChild(stand);
+    const hit = Object.assign(document.createElement('button'), {textContent:'Hit', style:'padding:10px 20px;margin:5px;background:#090;color:white;border:none;border-radius:5px;'});
+    const stand = Object.assign(document.createElement('button'), {textContent:'Stand', style:'padding:10px 20px;margin:5px;background:#900;color:white;border:none;border-radius:5px;'});
+    controls.append(hit, stand);
     hit.onclick = () => {
       playerHand.push(deck.pop());
-      const pVal = handValue(playerHand);
-      q('#bjResult').innerHTML = `Tvoja ruka: ${playerHand.map(c => `<img src="${c.img}" style="width:60px;height:90px;"> ${c.value}${c.suit}`).join(' ')} (=${pVal})<br>Dealer: <img src="${dealerHand[0].img}" style="width:60px;height:90px;"> ?`;
-      if (pVal > 21) { q('#bjResult').innerHTML += '<br><span style="color:#f33">Bust! Prehral si.</span>'; controls.innerHTML = ''; renderAll(); }
+      const val = handValue(playerHand);
+      q('#bjResult').innerHTML = `Tvoja ruka: ${playerHand.map(c=>`<img src="${c.img}" style="width:60px;height:90px;">`).join('')} (=${val})<br>Dealer: <img src="${dealerHand[0].img}" style="width:60px;height:90px;"> ?`;
+      if (val > 21) { q('#bjResult').innerHTML += '<br><span style="color:#f33">Bust!</span>'; controls.innerHTML = ''; renderAll(); }
     };
     stand.onclick = () => {
       while (handValue(dealerHand) < 17) dealerHand.push(deck.pop());
-      const dVal = handValue(dealerHand);
-      const pVal = handValue(playerHand);
-      let res = `Tvoja ruka: ${playerHand.map(c => `<img src="${c.img}" style="width:60px;height:90px;"> ${c.value}${c.suit}`).join(' ')} (=${pVal})<br>Dealer: ${dealerHand.map(c => `<img src="${c.img}" style="width:60px;height:90px;"> ${c.value}${c.suit}`).join(' ')} (=${dVal})<br>`;
+      const p = handValue(playerHand), d = handValue(dealerHand);
+      let res = `Tvoja: ${playerHand.map(c=>`<img src="${c.img}" style="width:60px;height:90px;">`).join('')} (=${p})<br>Dealer: ${dealerHand.map(c=>`<img src="${c.img}" style="width:60px;height:90px;">`).join('')} (=${d})<br>`;
       let win = 0;
-      if (pVal > 21) res += '<span style="color:#f33">Prehral si.</span>';
-      else if (dVal > 21 || pVal > dVal) { win = bet * 2; state.coins += win; res += `<span style="color:#90ee90">Vyhral si ${win}¢!</span>`; }
-      else if (pVal === dVal) { state.coins += bet; res += '<span style="color:#ff0">Remíza.</span>'; }
-      else res += '<span style="color:#f33">Prehral si.</span>';
+      if (p > 21) res += 'Prehral si.';
+      else if (d > 21 || p > d) { win = bet*2; state.coins += win; res += `Vyhral si ${win}¢!`; }
+      else if (p === d) { state.coins += bet; res += 'Remíza.'; }
+      else res += 'Prehral si.';
       q('#bjResult').innerHTML = res; controls.innerHTML = ''; renderAll();
     };
   };
 }
 
-// Coin Flip s obrázkami
 function openCoinFlip() {
   showModal(`
-    <h3>🪙 Hod mincou</h3>
+    <h3>Hod mincou</h3>
     <img src="https://www.pngkey.com/png/full/2-24947_coin-toss-heads-or-tails-coin-flip-png.png" style="width:150px;margin:10px auto;display:block;">
     <p>Stávka: <input id="coinBet" type="number" min="1" value="30" style="width:80px">¢</p>
     <button id="headsBtn" style="padding:15px 40px;font-size:22px;margin:8px;background:#900;color:white;border:none;border-radius:10px;">Hlava</button>
@@ -288,8 +298,10 @@ function openCoinFlip() {
     if (state.coins < bet) return flash('Málo peňazí!');
     state.coins -= bet;
     const result = Math.random() < 0.5;
-    const img = result ? 'https://www.pngkey.com/png/full/2-24947_coin-toss-heads-or-tails-coin-flip-png.png' : 'https://www.pngwing.com/en/free-png-vuqse/download'; // tails approx
-    q('#coinRes').innerHTML = `<img src="${img}" style="width:100px;height:100px;margin:10px;"> ${result ? 'Hlava' : 'Písmo'}<br>`;
+    const img = result
+      ? 'https://www.pngkey.com/png/full/2-24947_coin-toss-heads-or-tails-coin-flip-png.png'
+      : 'https://www.pngall.com/wp-content/uploads/2016/04/Coin-Tails-PNG.png';
+    q('#coinRes').innerHTML = `<img src="${img}" style="width:100px;height:100px;"><br>${result ? 'Hlava' : 'Písmo'}<br>`;
     if (result === guess) { state.coins += bet*2; q('#coinRes').innerHTML += '<span style="color:#90ee90">VÝHRA!</span>'; }
     else q('#coinRes').innerHTML += '<span style="color:#ff4444">Prehra</span>';
     renderAll();
@@ -299,12 +311,12 @@ function openCoinFlip() {
 function showModal(html) {
   const modal = q('#modal');
   modal.classList.remove('hidden');
-  q('#modal-content').innerHTML = html + '<button id="closeModal" style="position:absolute;top:10px;right:10px;padding:10px;font-size:20px;background:#900;color:white;border:none;border-radius:5px;cursor:pointer;">✕</button>';
+  q('#modal-content').innerHTML = html + '<button id="closeModal" style="position:absolute;top:10px;right:10px;padding:10px;font-size:20px;background:#900;color:white;border:none;border-radius:5px;cursor:pointer;">X</button>';
   q('#closeModal').onclick = () => modal.classList.add('hidden');
   modal.onclick = e => { if (e.target === modal) modal.classList.add('hidden'); };
 }
 
-/* ========== BUILD ACTIONS ========== */
+/* ========== AKCIE V MIESTNOSTIACH ========== */
 function buildRoomActions() {
   const actions = q('#actions'); actions.innerHTML = '';
   if (!state.currentRoom) { actions.innerHTML = '<div class="muted">Vyber miestnosť</div>'; return; }
@@ -315,68 +327,59 @@ function buildRoomActions() {
     b.style.cssText = 'padding:16px;margin:8px;font-size:18px;border-radius:16px;';
     b.onclick = onclick;
     actions.appendChild(b);
-    return b;
   };
 
-  // KUCHYŇA
   if (state.currentRoom === 'kuchyna') {
     actions.innerHTML += `<div style="margin:12px 0"><strong>Zásoba: ${state.foodStock}</strong></div>`;
-    btn('🍔', 'Jesť (1 porcia)', () => {
+    btn('Burger', 'Jesť (1 porcia)', () => {
       if (state.foodStock <= 0) return flash('Došlo jedlo!');
       state.foodStock--; state.hunger = clamp(state.hunger + 55); state.health = clamp(state.health + 12); state.toilet = clamp(state.toilet + 20);
       flash('Mňam mňam!');
       renderAll();
     });
-    btn('🛒', 'Kúpiť 5× jedlo', () => {
+    btn('Shopping Cart', 'Kúpiť 5× jedlo', () => {
       const cena = getPrice(22);
       if (state.coins >= cena) { state.coins -= cena; state.foodStock += 5; flash('Kúpil si jedlo!'); renderAll(); }
       else flash('Nemáš dosť peňazí!');
     }, 22);
   }
 
-  // MARKET
   if (state.currentRoom === 'market') {
-    btn('🛍️', 'Malá zásoba +8', () => { const c = getPrice(18); if (state.coins >= c) { state.coins -= c; state.foodStock += 8; flash('Kúpil si!'); renderAll(); } }, 18);
-    btn('📦', 'Stredná +20', () => { const c = getPrice(45); if (state.coins >= c) { state.coins -= c; state.foodStock += 20; flash('Veľká zásoba!'); renderAll(); } }, 45);
-    btn('🏪', 'Veľká +50', () => { const c = getPrice(100); if (state.coins >= c) { state.coins -= c; state.foodStock += 50; flash('MEGA nákup!'); renderAll(); } }, 100);
+    btn('Shopping Bags', 'Malá zásoba +8', () => { const c = getPrice(18); if (state.coins >= c) { state.coins -= c; state.foodStock += 8; flash('Kúpil si!'); renderAll(); } }, 18);
+    btn('Package', 'Stredná +20', () => { const c = getPrice(45); if (state.coins >= c) { state.coins -= c; state.foodStock += 20; flash('Veľká zásoba!'); renderAll(); } }, 45);
+    btn('Shopping Cart', 'Veľká +50', () => { const c = getPrice(100); if (state.coins >= c) { state.coins -= c; state.foodStock += 50; flash('MEGA nákup!'); renderAll(); } }, 100);
 
-    // BLACK MARKET
     if (state.blackMarketUnlocked) {
-      actions.innerHTML += '<hr style="border-color:#f33;"><div style="color:#f33;font-weight:bold;font-size:20px;">🕶️ TEMNÝ KÚT</div>';
+      actions.innerHTML += '<hr style="border-color:#f33;"><div style="color:#f33;font-weight:bold;font-size:20px;">Temný kút</div>';
       if (!state.hasGana) {
-        btn('🔫', 'Kúpiť ganu', buyGana);
+        btn('Gun', 'Kúpiť ganu', buyGana);
       } else {
-        btn('💀', 'Použiť ganu (koniec)', () => {
-          if (confirm('Naozaj chceš skončiť?')) { state.health = 0; renderAll(); }
-        });
+        btn('Skull', 'Použiť ganu (koniec)', () => confirm('Naozaj?') && (state.health = 0, renderAll()));
       }
     }
   }
 
-  // CASINO
   if (state.currentRoom === 'casino') {
-    btn('🎰', 'Sloty', openSlots);
-    btn('🎡', 'Ruleta', openRoulette);
-    btn('🪙', 'Hod mincou', openCoinFlip);
-    btn('🃏', 'Blackjack', openBlackjack);
+    btn('Slot Machine', 'Sloty', openSlots);
+    btn('Roulette', 'Ruleta', openRoulette);
+    btn('Coin', 'Hod mincou', openCoinFlip);
+    btn('Cards', 'Blackjack', openBlackjack);
   }
 
-  // OSTATNÉ
   const simple = {
-    kupelna: ['🚿', 'Sprcha', () => { const c = getPrice(5); if (state.coins >= c) { state.coins -= c; state.health = clamp(state.health + 40); flash('Čistý!'); renderAll(); } }, 5],
-    spalna: ['😴', 'Spať', () => { state.sleep = clamp(state.sleep + 80); state.health = clamp(state.health + 20); flash('Vyspatý'); renderAll(); }],
-    wc: ['🚽', 'WC', () => { state.toilet = 0; state.health = clamp(state.health + 15); flash('Úľava'); renderAll(); }],
-    praca: ['💼', 'Pracovať', () => { const earn = 20 + Math.floor(Math.random()*40); state.coins += earn; state.fun = clamp(state.fun - 15); flash(`+${earn}¢ z roboty`); renderAll(); }],
-    church: ['🙏', 'Modlitba', () => { state.faith = clamp(state.faith + 50); flash('Amen'); renderAll(); }],
-    hracia: ['🎮', 'Hrať sa', () => { state.fun = clamp(state.fun + 60); state.hunger = clamp(state.hunger - 10); flash('Zábava!'); renderAll(); }]
+    kupelna: ['Shower', 'Sprcha', () => { const c = getPrice(5); if (state.coins >= c) { state.coins -= c; state.health = clamp(state.health + 40); flash('Čistý!'); renderAll(); } }, 5],
+    spalna: ['Sleeping', 'Spať', () => { state.sleep = clamp(state.sleep + 80); state.health = clamp(state.health + 20); flash('Vyspatý'); renderAll(); }],
+    wc: ['Toilet', 'WC', () => { state.toilet = 0; state.health = clamp(state.health + 15); flash('Úľava'); renderAll(); }],
+    praca: ['Briefcase', 'Pracovať', () => { const earn = 20 + Math.floor(Math.random()*40); state.coins += earn; state.fun = clamp(state.fun - 15); flash(`+${earn}¢ z roboty`); renderAll(); }],
+    church: ['Praying Hands', 'Modlitba', () => { state.faith = clamp(state.faith + 50); flash('Amen'); renderAll(); }],
+    hracia: ['Game Controller', 'Hrať sa', () => { state.fun = clamp(state.fun + 60); state.hunger = clamp(state.hunger - 10); flash('Zábava!'); renderAll(); }]
   };
   if (simple[state.currentRoom]) {
     const [icon, text, fn, price] = simple[state.currentRoom];
     btn(icon, text, fn, price || null);
   }
 
-  // Domov
-  btn('🏠', 'Domov', () => { state.currentRoom = null; renderAll(); }).style.marginTop = '30px';
+  btn('House', 'Domov', () => { state.currentRoom = null; renderAll(); }).style.marginTop = '30px';
 }
 
 /* ========== GAME OVER ========== */
@@ -392,7 +395,7 @@ function gameOver() {
   document.body.appendChild(ov);
 }
 
-/* ========== TICK ========== */
+/* ========== BEZPEČNÝ TICK ========== */
 function applyTick() {
   if (!gameRunning) return;
   state.hunger = clamp(state.hunger - DEC.hunger);
@@ -407,12 +410,13 @@ function applyTick() {
 
 function startTick() {
   clearInterval(tickInterval);
-  tickInterval = setInterval(applyTick, TICK_MS);
-  const missed = Math.floor((Date.now() - state.lastTick) / TICK_MS);
+  const missed = Math.min(Math.floor((Date.now() - state.lastTick) / TICK_MS), 12);
   for (let i = 0; i < missed; i++) applyTick();
+  if (missed >= 12) flash('Prežil si dlhú pauzu... ledva!', 8000);
+  tickInterval = setInterval(applyTick, TICK_MS);
 }
 
-/* ========== NAVIGÁCIA & INIT ========== */
+/* ========== INIT ========== */
 qa('.rooms button').forEach(b => b.onclick = () => { state.currentRoom = b.dataset.room; renderAll(); });
 q('#pou-img').onclick = () => { state.currentRoom = null; renderAll(); };
 q('#saveBtn').onclick = () => { saveState(); flash('Uložené'); };
@@ -421,8 +425,9 @@ q('#resetBtn').onclick = () => confirm('Reset?') && (localStorage.removeItem(STO
 function init() {
   renderAll();
   startTick();
-  // Konsolidácia po 8 minútach
-  setTimeout(startKonsolidacia, 8 * 60 * 1000);
+  if (!state.eventKonsolidacia) {
+    setTimeout(startKonsolidacia, 8 * 60 * 1000);
+  }
   window.addEventListener('beforeunload', saveState);
 }
 init();

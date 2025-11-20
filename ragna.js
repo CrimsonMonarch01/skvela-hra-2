@@ -185,7 +185,7 @@ function openSlots() {
     const bet = Math.max(1, +q('#slotBet').value);
     if (state.coins < bet) return flash('Málo peňazí!');
     state.coins -= bet;
-    const symbols = ['Cherry', 'Lemon', 'Bell', 'Star', 'Diamond'];
+    const symbols = ['🍒', '🍋', '🔔', '⭐', '💎'];
     const a = symbols[Math.floor(Math.random()*5)];
     const b = symbols[Math.floor(Math.random()*5)];
     const c = symbols[Math.floor(Math.random()*5)];

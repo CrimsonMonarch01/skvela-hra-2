@@ -1,30 +1,33 @@
 /* ============================
-   RAGNA.JS — Pou Ultimate (PLNÁ VERZIA S IKONKAMI + OBRÁZKAMI)
+   RAGNA.JS — Pou Ultimate + EVENT KONSOLIDÁCIA + GANA + SEBA-VRAŽDA
    ============================ */
 
 const TICK_MS = 120000;
 const DEC = { sleep: 3, hunger: 7, fun: 9, faith: 1, toilet: 5 };
 
 const ROOM_ASSETS = {
-  defaultRoom: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/pou.png?raw=true',
-  kuchyna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kuchyna.png?raw=true',
-  kupelna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kupelna.jpg?raw=true',
-  hracia: '',
-  spalna: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/hracia%20miestnost.png?raw=true',
-  praca: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kancelaria-s-papiermi.png?raw=true',
-  casino: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/casino.png?raw=true',
-  wc: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/WC.png?raw=true',
-  church: 'https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/kostol.png?raw=true',
+  defaultRoom: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/pou.png',
+  kuchyna: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/kuchyna.png',
+  kupelna: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/kupelna.jpg',
+  hracia: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/hracia-miestnost.png',
+  spalna: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/spalna.jpg',
+  praca: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/kancelaria-s-papiermi.png',
+  casino: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/casino.png',
+  wc: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/WC.png',
+  church: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/kostol.png',
   market: 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/market.jpg'
 };
 
-const STORAGE_KEY = 'pou_ultimate_icons';
+const STORAGE_KEY = 'pou_konsolidacia_v666';
 const DEFAULT = {
   hunger: 70, health: 100, sleep: 60, fun: 75, faith: 20, toilet: 15,
-  coins: 100, foodStock: 7, currentRoom: null, lastTick: Date.now()
+  coins: 100, foodStock: 7, currentRoom: null, lastTick: Date.now(),
+  eventKonsolidacia: false,      // či beží event
+  blackMarketUnlocked: false,    // či je odomknutý black market
+  hasGana: false                 // či si kúpil ganu
 };
 
-let state = loadState();
+let state = Object.assign({}, DEFAULT, loadState());
 let gameRunning = true;
 let tickInterval = null;
 
@@ -35,90 +38,192 @@ function clamp(v, a=0, b=100) { return Math.max(a, Math.min(b, v)); }
 function fmtCoins(n) { return ` ${n}¢`; }
 
 function loadState() {
-  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return Object.assign({}, DEFAULT, JSON.parse(raw)); }
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); }
   catch(e) { console.warn(e); }
-  return Object.assign({}, DEFAULT);
+  return {};
 }
 function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-/* ========== ELEMENTY ========== */
-const els = {
-  hunger: q('#hunger'), hungerVal: q('#hunger-val'),
-  health: q('#health'), healthVal: q('#health-val'),
-  sleep: q('#sleep'), sleepVal: q('#sleep-val'),
-  fun: q('#fun'), funVal: q('#fun-val'),
-  faith: q('#faith'), faithVal: q('#faith-val'),
-  toilet: q('#toilet'), toiletVal: q('#toilet-val'),
-  coins: q('#coins'), foodDisplay: null,
-  pouImg: q('#pou-img'), roomImg: q('#room-img'), roomTitle: q('#room-title'),
-  actions: q('#actions'), modal: q('#modal'), modalContent: q('#modal-content'), modalClose: q('#modal-close')
-};
-
-/* ========== FLASH & MODAL ========== */
-function flash(text, time = 3000) {
+/* ========== FLASH ========== */
+function flash(text, time = 4000) {
   let f = q('#flash');
   if (!f) {
     f = document.createElement('div'); f.id = 'flash';
-    f.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:14px 24px;background:#000000dd;color:white;border-radius:16px;z-index:9999;font-weight:bold;opacity:0;transition:opacity .4s;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
+    f.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:16px 28px;background:#000c;color:#f33;border:3px solid #f33;border-radius:20px;z-index:99999;font-weight:bold;opacity:0;transition:all .5s;';
     document.body.appendChild(f);
   }
-  f.textContent = text; f.style.opacity = '1';
+  f.innerHTML = text; f.style.opacity = '1';
   clearTimeout(f.to); f.to = setTimeout(() => f.style.opacity = '0', time);
 }
 
-function showModal(html) {
-  els.modal.classList.remove('hidden');
-  els.modalContent.innerHTML = html;
-  els.modalClose.onclick = closeModal;
-  els.modal.onclick = e => { if (e.target === els.modal) closeModal(); };
+/* ========== EVENT KONSOLIDÁCIA ========== */
+// Náhodne spustiť event (cca raz za 15–40 minút)
+setTimeout(() => {
+  if (!state.eventKonsolidacia && Math.random() < 0.7) {
+    state.eventKonsolidacia = true;
+    flash('<span style="font-size:20px">KONSOLIDÁCIA!</span><br>Všetky ceny +75%!<br>Zbohatni alebo zomri!', 8000);
+    renderAll();
+  }
+}, Math.random() * 600000 + 900000);
+
+/* ========== BLACK MARKET & GANA ========== */
+function tryUnlockBlackMarket() {
+  if (state.coins >= 10000 && !state.blackMarketUnlocked) {
+    state.blackMarketUnlocked = true;
+    flash('BLACK MARKET ODOMKNUTÝ!<br>Choď do Market → "Temný kút"', 7000);
+    renderAll();
+  }
 }
-function closeModal() { els.modal.classList.add('hidden'); }
+
+function buyGana() {
+  if (state.coins < 9999) return flash('Chýba ti presne 1¢ na ganu... smola');
+  state.coins -= 9999;
+  state.hasGana = true;
+  flash('KÚPIL SI SI GANU<br>Teraz máš dve možnosti...', 6000);
+  setTimeout(() => {
+    if (confirm('Si pripravený?\n\n[OK] = ZABIŤ SA (Game Over)\n[Cancel] = ŽIŤ ĎALEJ S GANOU')) {
+      flash('Pou sa zastrelil. Koniec.', 10000);
+      setTimeout(() => { state.health = 0; renderAll(); }, 1500);
+    } else {
+      flash('Pou sa rozhodol žiť ďalej... zatiaľ', 5000);
+    }
+    renderAll();
+  }, 1000);
+}
+
+/* ========== CENA S EVENTOM ========== */
+function getPrice(base) {
+  return state.eventKonsolidacia ? Math.ceil(base * 1.75) : base;
+}
+
+/* ========== RENDER ========== */
+function renderAll() {
+  q('#hunger').value = state.hunger; q('#hunger-val').textContent = Math.round(state.hunger)+'%';
+  q('#health').value = state.health; q('#health-val').textContent = Math.round(state.health)+'%';
+  q('#sleep').value = state.sleep; q('#sleep-val').textContent = Math.round(state.sleep)+'%';
+  q('#fun').value = state.fun; q('#fun-val').textContent = Math.round(state.fun)+'%';
+  q('#faith').value = state.faith; q('#faith-val').textContent = Math.round(state.faith)+'%';
+  q('#toilet').value = state.toilet; q('#toilet-val').textContent = Math.round(state.toilet)+'%';
+  q('#coins').textContent = fmtCoins(state.coins);
+
+  // Zásoba jedla
+  let foodEl = q('#foodInfo');
+  if (!foodEl) {
+    foodEl = document.createElement('div'); foodEl.id = 'foodInfo';
+    q('#coins').parentNode.appendChild(foodEl);
+  }
+  foodEl.innerHTML = `Jedlo: ${state.foodStock} porcií` + (state.eventKonsolidacia ? ' <span style="color:#f33">(KONSOLIDÁCIA!)</span>' : '');
+
+  // Event info
+  if (state.eventKonsolidacia) {
+    let ev = q('#eventBanner');
+    if (!ev) {
+      ev = document.createElement('div'); ev.id = 'eventBanner';
+      ev.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#800;color:#fff;padding:10px 30px;border-radius:50px;font-weight:bold;z-index:9998;';
+      ev.textContent = 'KONSOLIDÁCIA – ceny +75%!';
+      document.body.appendChild(ev);
+    }
+  } else {
+    if (q('#eventBanner')) q('#eventBanner').remove();
+  }
+
+  q('#room-title').textContent = state.currentRoom ? state.currentRoom.charAt(0).toUpperCase() + state.currentRoom.slice(1) : 'Domov';
+  q('#room-img').src = state.currentRoom ? (ROOM_ASSETS[state.currentRoom] || ROOM_ASSETS.defaultRoom) : ROOM_ASSETS.defaultRoom;
+
+  buildRoomActions();
+  tryUnlockBlackMarket();
+  saveState();
+  if (state.health <= 0) setTimeout(gameOver, 1000);
+}
+
+/* ========== AKCIE V MIESTNOSTIACH ========== */
+function buildRoomActions() {
+  const actions = q('#actions'); actions.innerHTML = '';
+  if (!state.currentRoom) { actions.innerHTML = '<div class="muted">Vyber miestnosť</div>'; return; }
+
+  const btn = (icon, text, onclick, price = null) => {
+    const b = document.createElement('button');
+    b.innerHTML = `${icon} ${text}` + (price !== null ? ` <small>(${getPrice(price)}¢)</small>` : '');
+    b.style.cssText = 'padding:16px;margin:8px;font-size:18px;border-radius:16px;';
+    b.onclick = onclick;
+    actions.appendChild(b);
+    return b;
+  };
+
+  // KUCHYŇA
+  if (state.currentRoom === 'kuchyna') {
+    actions.innerHTML += `<div style="margin:12px 0"><strong>Zásoba: ${state.foodStock}</strong></div>`;
+    btn('Jesť', 'Jesť (1 porcia)', () => {
+      if (state.foodStock <= 0) return flash('Došlo jedlo!');
+      state.foodStock--; state.hunger = clamp(state.hunger + 55); state.toilet += 20;
+      flash('Mňam mňam!');
+      renderAll();
+    });
+    btn('Kúpiť jedlo', 'Kúpiť 5× jedlo', () => {
+      const cena = getPrice(22);
+      if (state.coins >= cena) { state.coins -= cena; state.foodStock += 5; flash('Kúpil si jedlo!'); renderAll(); }
+      else flash('Nemáš dosť peňazí!');
+    }, 22);
+  }
+
+  // MARKET
+  if (state.currentRoom === 'market') {
+    btn('Malá zásoba', '+8 jedla', () => { const c = getPrice(18); if (state.coins >= c) { state.coins -= c; state.foodStock += 8; renderAll(); } }, 18);
+    btn('Stredná zásoba', '+20 jedla', () => { const c = getPrice(45); if (state.coins >= c) { state.coins -= c; state.foodStock += 20; renderAll(); } }, 45);
+    btn('Veľká zásoba', '+50 jedla', () => { const c = getPrice(100); if (state.coins >= c) { state.coins -= c; state.foodStock += 50; renderAll(); } }, 100);
+
+    // BLACK MARKET
+    if (state.blackMarketUnlocked) {
+      actions.innerHTML += '<hr><div style="color:#f33;font-weight:bold">TEMNÝ KÚT</div>';
+      if (!state.hasGana) {
+        btn('GANA', 'Kúpiť ganu za 9999¢', buyGana);
+      } else {
+        btn('Gana', 'Už máš ganu... môžeš ju použiť', () => {
+          if (confirm('Naozaj chceš skončiť?')) { state.health = 0; renderAll(); }
+        });
+      }
+    }
+  }
+
+  // CASINO
+  if (state.currentRoom === 'casino') {
+    btn('Sloty', 'Výherné automaty', () => alert('Sloty coming soon'));
+    btn('Ruleta', 'Ruleta', () => alert('Ruleta coming soon'));
+    btn('Hod mincou', 'Hod mincou 50/50', () => alert('Coinflip coming soon'));
+  }
+
+  // OSTATNÉ AKCIE
+  const simple = {
+    kupelna: ['Sprcha', () => { const c = getPrice(5); if (state.coins >= c) { state.coins -= c; state.health += 40; flash('Čistý!'); renderAll(); } }, 5],
+    spalna: ['Spať', () => { state.sleep += 80; state.health += 20; flash('Vyspatý'); renderAll(); }],
+    wc: ['WC', () => { state.toilet = 0; state.health += 15; flash('Úľava'); renderAll(); }],
+    praca: ['Práca', () => { const earn = 20 + Math.floor(Math.random()*40); state.coins += earn; state.fun -= 15; flash(`+${earn}¢ z roboty`); renderAll(); }],
+    church: ['Modlitba', () => { state.faith += 50; flash('Amen'); renderAll(); }],
+    hracia: ['Hrať sa', () => { state.fun += 60; state.hunger -= 10; flash('Zábava!'); renderAll(); }]
+  };
+  if (simple[state.currentRoom]) {
+    const [icon, fn, price] = simple[state.currentRoom];
+    btn(icon, icon, fn, price || null);
+  }
+
+  // Domov
+  btn('Domov', 'Domov', () => { state.currentRoom = null; renderAll(); }).style.marginTop = '30px';
+}
 
 /* ========== GAME OVER ========== */
 function gameOver() {
   if (!gameRunning) return;
   gameRunning = false;
   clearInterval(tickInterval);
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.97);display:flex;align-items:center;justify-content:center;z-index:99999;color:white;text-align:center;';
-  overlay.innerHTML = `<div style="background:#900;padding:60px;border-radius:30px;border:10px solid #f33;">
-    <h1 style="font-size:80px;margin:0;">GAME OVER</h1>
-    <p style="font-size:32px;">Pou odišiel do neba</p>
-    <button onclick="localStorage.removeItem('pou_ultimate_icons');location.reload()" style="margin-top:30px;padding:18px 50px;font-size:28px;background:#222;border:none;border-radius:16px;cursor:pointer;">Nová hra</button>
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:99999;color:#f33;font-size:60px;text-align:center;';
+  ov.innerHTML = `<div style="background:#300;padding:60px;border:10px solid #f33;border-radius:30px;">
+    GAME OVER<br><button onclick="localStorage.removeItem('pou_konsolidacia_v666');location.reload()" style="margin-top:30px;padding:20px 50px;font-size:30px;background:#900;border:none;border-radius:20px;cursor:pointer;">Nová hra</button>
   </div>`;
-  document.body.appendChild(overlay);
+  document.body.appendChild(ov);
 }
 
-function checkDeath() {
-  if (state.health <= 0 && gameRunning) { state.health = 0; renderAll(); setTimeout(gameOver, 1200); }
-}
-
-/* ========== RENDER ========== */
-function renderAll() {
-  els.hunger.value = state.hunger; els.hungerVal.textContent = Math.round(state.hunger)+'%';
-  els.health.value = state.health; els.healthVal.textContent = Math.round(state.health)+'%';
-  els.sleep.value = state.sleep; els.sleepVal.textContent = Math.round(state.sleep)+'%';
-  els.fun.value = state.fun; els.funVal.textContent = Math.round(state.fun)+'%';
-  els.faith.value = state.faith; els.faithVal.textContent = Math.round(state.faith)+'%';
-  els.toilet.value = state.toilet; els.toiletVal.textContent = Math.round(state.toilet)+'%';
-  els.coins.textContent = fmtCoins(state.coins);
-
-  if (!els.foodDisplay) {
-    els.foodDisplay = document.createElement('div');
-    els.foodDisplay.style.cssText = 'margin-top:8px;font-size:15px;';
-    els.coins.parentNode.appendChild(els.foodDisplay);
-  }
-  els.foodDisplay.innerHTML = ` Jedlo v zásobe: ${state.foodStock}`;
-
-  els.roomTitle.textContent = state.currentRoom ? state.currentRoom.charAt(0).toUpperCase() + state.currentRoom.slice(1) : 'Domov';
-  els.roomImg.src = state.currentRoom ? (ROOM_ASSETS[state.currentRoom] || ROOM_ASSETS.defaultRoom) : ROOM_ASSETS.defaultRoom;
-
-  buildRoomActions();
-  saveState();
-  checkDeath();
-}
-
-/* ========== TICK ========== */
+/* ========== TICK & INIT ========== */
 function applyTick() {
   if (!gameRunning) return;
   state.hunger = clamp(state.hunger - DEC.hunger);
@@ -126,11 +231,7 @@ function applyTick() {
   state.sleep = clamp(state.sleep - DEC.sleep);
   state.faith = clamp(state.faith - DEC.faith);
   state.toilet = clamp(state.toilet + DEC.toilet);
-
-  if (state.hunger <= 0) state.health = clamp(state.health - 12);
-  if (state.toilet >= 100) state.health = clamp(state.health - 15);
-  if (state.sleep <= 5) state.fun = clamp(state.fun - 6);
-
+  if (state.hunger <= 0 || state.toilet >= 100) state.health = clamp(state.health - 15);
   state.lastTick = Date.now();
   renderAll();
 }
@@ -142,136 +243,12 @@ function startTick() {
   for (let i = 0; i < missed; i++) applyTick();
 }
 
-/* ========== CASINO ========== */
-function openSlots() {
-  showModal(`<h3>Sloty</h3>
-    <p>Stávka: <input id="bet" type="number" min="1" value="15" style="width:80px">¢</p>
-    <button id="spin" style="padding:12px 30px;font-size:18px;">Točiť!</button>
-    <div id="res" style="margin-top:20px;font-size:40px;letter-spacing:10px;"></div>`);
-  q('#spin').onclick = () => {
-    const bet = Math.max(1, +q('#bet').value);
-    if (state.coins < bet) return flash('Málo peňazí!');
-    state.coins -= bet;
-    const s = ['Cherry','Lemon','Bell','Star','Diamond','Seven'];
-    const a = s[Math.floor(Math.random()*s.length)];
-    const b = s[Math.floor(Math.random()*s.length)];
-    const c = s[Math.floor(Math.random()*s.length)];
-    q('#res').textContent = `${a} ${b} ${c}`;
-    if (a===b && b===c) { const win = bet*20; state.coins += win; flash(`JACKPOT! +${win}¢`); }
-    else if (a===b || b===c || a===c) { const win = bet*4; state.coins += win; flash(`Výhra +${win}¢!`); }
-    renderAll();
-  };
-}
-
-function openRoulette() {
-  showModal(`<h3>Ruleta</h3>
-    Stávka: <input id="bet" type="number" min="1" value="20" style="width:80px">¢<br><br>
-    <input id="choice" placeholder="číslo / red / black" style="width:220px;padding:8px;"><br><br>
-    <button id="spin" style="padding:12px 40px;font-size:20px;">Točiť koleso!</button>
-    <div id="res" style="margin-top:20px;font-size:24px;"></div>`);
-  q('#spin').onclick = () => {
-    const bet = Math.max(1, +q('#bet').value);
-    if (state.coins < bet) return flash('Nedostatok mincí!');
-    state.coins -= bet;
-    const roll = Math.floor(Math.random()*37);
-    const color = roll===0 ? 'zelená' : (roll%2===0 ? 'čierna' : 'červená');
-    const choice = q('#choice').value.trim().toLowerCase();
-    let win = 0;
-    if (+choice === roll) win = bet*35;
-    else if (choice==='red' && color==='červená') win = bet*2;
-    else if (choice==='black' && color==='čierna') win = bet*2;
-    q('#res').innerHTML = `Padlo: <strong>${roll} (${color})</strong><br>`;
-    if (win>0) { state.coins += win; q('#res').innerHTML += `<span style="color:#90ee90">VÝHRA +${win}¢!</span>`; }
-    else q('#res').innerHTML += '<span style="color:#ff4444">Prehra</span>';
-    renderAll();
-  };
-}
-
-function openCoinFlip() {
-  showModal(`<h3>Hod mincou</h3>
-    Stávka: <input id="bet" type="number" min="1" value="30" style="width:80px">¢<br><br>
-    <button style="padding:15px 40px;font-size:22px;margin:8px;">Hlava</button>
-    <button style="padding:15px 40px;font-size:22px;margin:8px;">Písmo</button>
-    <div id="res" style="margin-top:20px;font-size:50px;"></div>`);
-  qa('#modal button').forEach((btn, i) => {
-    btn.onclick = () => {
-      const bet = Math.max(1, +q('#bet').value);
-      if (state.coins < bet) return flash('Málo peňazí!');
-      state.coins -= bet;
-      const result = Math.random() < 0.5;
-      q('#res').textContent = result ? 'Hlava' : 'Písmo';
-      if (result === (i===0)) { state.coins += bet*2; q('#res').innerHTML += '<br><span style="color:#90ee90">VÝHRA!</span>'; }
-      else q('#res').innerHTML += '<br><span style="color:#ff4444">Prehra</span>';
-      renderAll();
-    };
-  });
-}
-
-/* ========== AKCIE S PEKNÝMI IKONKAMI ========== */
-function buildRoomActions() {
-  els.actions.innerHTML = '';
-  const cur = state.currentRoom;
-  if (!cur) { els.actions.innerHTML = '<div class="muted">Klikni na miestnosť alebo na Pou</div>'; return; }
-
-  const btn = (text, icon, onclick, cost = null) => {
-    const b = document.createElement('button');
-    b.innerHTML = `${icon} ${text}` + (cost ? ` <small>(${cost}¢)</small>` : '');
-    b.style.cssText = 'padding:14px 20px;margin:8px;font-size:18px;border-radius:16px;';
-    b.onclick = onclick;
-    els.actions.appendChild(b);
-    return b;
-  };
-
-  if (cur === 'kuchyna') {
-    els.actions.innerHTML += `<div style="font-size:18px;margin-bottom:12px;"><strong>Zásoba jedla: ${state.foodStock}</strong></div>`;
-    btn('Jesť', 'Mňam', eatFood).disabled = state.foodStock === 0;
-    btn('Kúpiť 5× jedlo', 'Nakúpiť', () => {
-      if (state.coins >= 22) { state.coins -= 22; state.foodStock += 5; flash('Kúpil si jedlo!'); renderAll(); }
-      else flash('Málo peňazí!');
-    });
-  }
-
-  if (cur === 'market') {
-    btn('Malá zásoba +8', '15¢', () => { if (state.coins >= 15) { state.coins -= 15; state.foodStock += 8; flash('Kúpil si jedlo!'); renderAll(); } });
-    btn('Stredná +20', '38¢', () => { if (state.coins >= 38) { state.coins -= 38; state.foodStock += 20; flash('Veľká zásoba!'); renderAll(); } });
-    btn('Veľká +50', '90¢', () => { if (state.coins >= 90) { state.coins -= 90; state.foodStock += 50; flash('MEGA nákup!'); renderAll(); } });
-  }
-
-  if (cur === 'casino') {
-    btn('Sloty', 'Výherné automaty', openSlots);
-    btn('Ruleta', 'Koleso šťastia', openRoulette);
-    btn('Hod mincou', '50/50', openCoinFlip);
-  }
-
-  if (cur === 'kupelna') btn('Sprcha', 'Umývanie', () => { if (state.coins >= 4) { state.coins -= 4; state.health += 40; flash('Čistý Pou!'); renderAll(); } else flash('Málo peňazí'); });
-  if (cur === 'spalna') btn('Spať', 'Spánok', () => { state.sleep += 70; state.health += 15; state.fun -= 10; flash('Pou si pospal'); renderAll(); });
-  if (cur === 'wc') btn('Na WC', 'Toaleta', () => { state.toilet = 5; state.health += 12; flash('Úľava!'); renderAll(); });
-  if (cur === 'praca') btn('Pracovať', 'Práca', () => { const earn = 15 + Math.floor(Math.random()*25); state.coins += earn; state.fun -= 12; state.toilet += 20; flash(`Zarobil si ${earn}¢!`); renderAll(); });
-  if (cur === 'church') btn('Modlitba', 'Modlitba', () => { state.faith += 45; state.fun -= 6; flash('Pou sa modlil'); renderAll(); });
-  if (cur === 'hracia') btn('Hrať sa', 'Zábava', () => { state.fun += 50; state.hunger -= 10; flash('Zábava level 100!'); renderAll(); });
-
-  // Domov
-  btn('Domov', 'Domov', () => { state.currentRoom = null; renderAll(); }).style.marginTop = '20px';
-}
-
-function eatFood() {
-  if (state.foodStock <= 0) { flash('Došlo jedlo!'); return; }
-  state.foodStock--;
-  state.hunger = clamp(state.hunger + 55);
-  state.health = clamp(state.health + 12);
-  state.toilet = clamp(state.toilet + 20);
-  flash('Mňam! Pou sa najedol');
-  renderAll();
-}
-
 /* ========== NAVIGÁCIA ========== */
 qa('.rooms button').forEach(b => b.onclick = () => { state.currentRoom = b.dataset.room; renderAll(); });
-els.pouImg.onclick = () => { state.currentRoom = null; renderAll(); };
+q('#pou-img').onclick = () => { state.currentRoom = null; renderAll(); };
+q('#saveBtn').onclick = () => { saveState(); flash('Uložené'); };
+q('#resetBtn').onclick = () => confirm('Reset?') && (localStorage.removeItem(STORAGE_KEY), location.reload());
 
-q('#saveBtn').onclick = () => { saveState(); flash('Uložené!'); };
-q('#resetBtn').onclick = () => confirm('Resetovať hru?') && (localStorage.removeItem(STORAGE_KEY) || location.reload());
-
-/* ========== INIT ========== */
 function init() {
   renderAll();
   startTick();

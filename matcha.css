@@ -1,79 +1,297 @@
-:root{
-  --bg: #f6f7fb;
-  --card: #ffffff;
-  --muted: #6b7280;
-  --accent: #6b9ef6;
-  --accent-2: #7ee787;
-  --danger: #f56a6a;
-  --glass: rgba(255,255,255,0.6);
-  --shadow: 0 6px 18px rgba(15,23,42,0.06);
-  --radius: 12px;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background: linear-gradient(180deg,var(--bg), #eef2f7);
-  color:#0f172a;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  line-height:1.45;
-  padding:24px;
+/* ========================================= */
+/*  MATCHA.CSS — Pou Ultimate: Konsolidácia Edition 2025 */
+/*  Autor: CrimsonMonarch01 + Grok vylepšenia */
+/* ========================================= */
+
+:root {
+  --bg: #0d0d0d;
+  --card: #1a1a1a;
+  --text: #f0f0f0;
+  --accent: #ff3333;
+  --accent-dark: #cc0000;
+  --gold: #ffaa00;
+  --green: #00cc00;
 }
 
-/* header */
-.banner{
-  max-width:1100px;
-  margin:0 auto 24px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.5));
-  border-radius: var(--radius);
-  padding:18px 22px;
-  box-shadow: var(--shadow);
-  display:flex;
-  gap:12px;
-  align-items:center;
-  justify-content:space-between;
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image: radial-gradient(circle at top left, #220000 0%, transparent 50%),
+                    radial-gradient(circle at bottom right, #002200 0%, transparent 50%);
 }
-.indicators{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
-.indicators>div{min-width:160px;display:flex;align-items:center;gap:8px}
-.indicators label{min-width:70px;font-weight:600;color:var(--muted)}
-.indicators span{min-width:36px;text-align:right;color:var(--muted);font-weight:600}
-progress{appearance:none;width:140px;height:12px;border-radius:10px;overflow:hidden;background: linear-gradient(90deg,#e6eaf3,#f6f8fc);border:1px solid rgba(15,23,42,0.04)}
-progress::-webkit-progress-value{border-radius:10px;background: linear-gradient(90deg,var(--accent), #4b7ef0);box-shadow: inset 0 -2px 0 rgba(255,255,255,0.15)}
-progress::-moz-progress-bar{border-radius:10px;background: linear-gradient(90deg,var(--accent), #4b7ef0)}
 
-.header-right{display:flex;gap:8px;align-items:center}
-#coins{font-weight:800;padding:6px 10px;border-radius:8px;background:linear-gradient(180deg,#fff,#f3f6ff);box-shadow:0 6px 12px rgba(50,60,80,0.04)}
-.small{padding:6px 8px;font-size:.85rem;border-radius:8px}
-.danger{background:var(--danger);color:white;border:0}
+/* Header */
+header {
+  background: #000;
+  padding: 16px;
+  text-align: center;
+  border-bottom: 5px solid var(--accent);
+  position: relative;
+}
+h1 {
+  margin: 0;
+  font-size: 32px;
+  color: var(--accent);
+  text-shadow: 0 0 10px #f003;
+  letter-spacing: 2px;
+}
 
-/* main layout */
-.pou-container{max-width:1100px;margin:0 auto 22px;background:var(--card);padding:18px;border-radius:var(--radius);box-shadow:var(--shadow);display:flex;gap:18px;align-items:flex-start}
-.left{flex:1;text-align:center}
-.right{flex:1}
-.pou-container img{width:160px;height:160px;object-fit:contain;border-radius:12px;background:linear-gradient(180deg,#fff,#f3f6ff);padding:6px;box-shadow: 0 6px 18px rgba(50,60,80,0.06)}
-.rooms{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.rooms button{background:var(--accent);color:white;border:0;padding:8px 12px;border-radius:8px;font-weight:600;cursor:pointer;box-shadow:0 6px 14px rgba(75,126,240,0.18)}
-.room-view{background:linear-gradient(180deg,#fff,#f7fbff);padding:12px;border-radius:10px;box-shadow:0 6px 12px rgba(15,23,42,0.04)}
-.room-img{width:100%;max-width:420px;border-radius:10px;box-shadow:var(--shadow);display:block;margin:8px auto}
+/* Ukazovatele */
+.indicators {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 20px auto;
+  max-width: 1000px;
+  padding: 0 10px;
+}
+.indicators > div {
+  background: var(--card);
+  padding: 10px;
+  border-radius: 12px;
+  border: 2px solid #333;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+.indicators label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #aaa;
+}
+progress {
+  width: 100%;
+  height: 24px;
+  border-radius: 12px;
+  background: #000;
+  border: 1px solid #444;
+}
+progress::-webkit-progress-bar { background: #000; border-radius: 12px; }
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #f90, #f33);
+  border-radius: 12px;
+}
+progress::-moz-progress-bar {
+  background: linear-gradient(90deg, #f90, #f33);
+  border-radius: 12px;
+}
 
-/* actions */
-.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
-.actions button{padding:10px 14px;border-radius:10px;border:0;background:#4b7ef0;color:white;font-weight:700;cursor:pointer}
+/* Pravý horný roh – mince + tlačidlá */
+.header-right {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: bold;
+}
+#coins { color: var(--gold); text-shadow: 0 0 10px #ff0; }
+button.small {
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #333;
+  color: white;
+  border: 2px solid #555;
+}
+button.danger {
+  background: var(--accent-dark);
+  border-color: var(--accent);
+}
 
-/* modal */
-.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);z-index:999}
-.modal.hidden{display:none}
-.modal-inner{background:white;padding:18px;border-radius:12px;max-width:760px;width:95%;box-shadow:0 10px 30px rgba(0,0,0,0.25);position:relative}
-.modal-close{position:absolute;right:10px;top:10px;border:0;background:#eee;border-radius:8px;padding:6px 8px;cursor:pointer}
+/* Hlavný layout */
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+@media (min-width: 800px) {
+  main { flex-direction: row; align-items: flex-start; }
+}
 
-/* helpers */
-.muted{color:var(--muted)}
-.hidden{display:none}
+/* Ľavá strana – Pou a miestnosť */
+.left {
+  background: var(--card);
+  padding: 25px;
+  border-radius: 20px;
+  text-align: center;
+  min-width: 300px;
+  box-shadow: 0 0 30px rgba(255,0,0,0.4);
+  border: 3px solid #333;
+}
+#room-title {
+  font-size: 28px;
+  margin: 10px 0;
+  color: var(--accent);
+  text-shadow: 0 0 10px #f003;
+}
+#room-img {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  border: 4px solid #444;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+}
+#pou-img {
+  width: 220px;
+  image-rendering: pixelated;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+#pou-img:hover { transform: scale(1.08); }
 
-/* responsive */
-@media (max-width:720px){
-  .pou-container{flex-direction:column;align-items:center}
-  .rooms{justify-content:center}
+/* Pravá strana – izbová navigácia + akcie */
+.right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.rooms {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.rooms button {
+  padding: 16px;
+  font-size: 15px;
+  background: linear-gradient(145deg, #333, #222);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+  transition: all 0.2s;
+}
+.rooms button:hover {
+  background: var(--accent-dark);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255,51,51,0.4);
+}
+
+/* Zobrazenie miestnosti + akcie */
+.room-view {
+  background: var(--card);
+  padding: 20px;
+  border-radius: 20px;
+  border: 3px solid #333;
+  box-shadow: 0 0 30px rgba(0,0,0,0.6);
+}
+#actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+}
+#actions button {
+  padding: 18px 24px;
+  font-size: 18px;
+  background: linear-gradient(145deg, #444, #222);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  min-width: 180px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+  transition: all 0.3s;
+}
+#actions button:hover {
+  background: var(--accent-dark);
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 15px 30px rgba(255,51,51,0.5);
+}
+#actions button small { color: #ff0; font-weight: bold; }
+
+/* Modal (casino, atď.) */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+.modal.hidden { display: none; }
+.modal-inner {
+  position: relative;
+  background: #111;
+  padding: 40px;
+  border-radius: 24px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  border: 4px solid var(--accent);
+  box-shadow: 0 0 50px rgba(255,51,51,0.6);
+}
+.modal h3 { font-size: 36px; margin: 0 0 20px; color: var(--accent); }
+.modal input, .modal button {
+  margin: 10px;
+  padding: 12px 20px;
+  font-size: 18px;
+  border-radius: 12px;
+}
+.modal button {
+  background: var(--accent-dark);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.modal button:hover { background: #ff0000; }
+
+/* Flash správy */
+#flash {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 16px 28px;
+  background: #000c;
+  color: #f33;
+  border: 3px solid #f33;
+  border-radius: 20px;
+  z-index: 99999;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.5s;
+  backdrop-filter: blur(10px);
+}
+
+/* Event banner */
+#eventBanner {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #800;
+  color: white;
+  padding: 12px 40px;
+  border-radius: 50px;
+  font-weight: bold;
+  z-index: 9998;
+  box-shadow: 0 0 20px #f003;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.05); } }
+
+/* Muted text */
+.muted { color: #666; font-style: italic; margin: 20px; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .rooms { grid-template-columns: 1fr 1fr; }
+  h1 { font-size: 24px; }
+  #actions button { min-width: 140px; font-size: 16px; padding: 14px; }
 }

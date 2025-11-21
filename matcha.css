@@ -295,3 +295,12 @@ main {
   h1 { font-size: 24px; }
   #actions button { min-width: 140px; font-size: 16px; padding: 14px; }
 }
+#bossOverlay {
+  position:fixed;inset:0;background:rgba(255,255,255,0.98);display:none;align-items:center;justify-content:center;z-index:999999;
+  flex-direction:column;color:#000;font-family:'Courier New';text-align:center;
+}
+#bossOverlay.active { display:flex; }
+#jesusFace { width:300px;filter:drop-shadow(0 0 30px gold);animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+.revolver { font-size:100px;animation:spin 0.5s linear;}
+@keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }

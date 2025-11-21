@@ -367,12 +367,12 @@ function buildRoomActions() {
   }
 
   const simple = {
-    kupelna: ['Shower', 'Sprcha', () => { const c = getPrice(5); if (state.coins >= c) { state.coins -= c; state.health = clamp(state.health + 40); flash('Čistý!'); renderAll(); } }, 5],
-    spalna: ['Sleeping', 'Spať', () => { state.sleep = clamp(state.sleep + 80); state.health = clamp(state.health + 20); flash('Vyspatý'); renderAll(); }],
-    wc: ['Toilet', 'WC', () => { state.toilet = 0; state.health = clamp(state.health + 15); flash('Úľava'); renderAll(); }],
-    praca: ['Briefcase', 'Pracovať', () => { const earn = 20 + Math.floor(Math.random()*40); state.coins += earn; state.fun = clamp(state.fun - 15); flash(`+${earn}¢ z roboty`); renderAll(); }],
-    church: ['Praying Hands', 'Modlitba', () => { state.faith = clamp(state.faith + 50); flash('Amen'); renderAll(); }],
-    hracia: ['Game Controller', 'Hrať sa', () => { state.fun = clamp(state.fun + 60); state.hunger = clamp(state.hunger - 10); flash('Zábava!'); renderAll(); }]
+    kupelna: ['🚿', 'Sprcha', () => { const c = getPrice(5); if (state.coins >= c) { state.coins -= c; state.health = clamp(state.health + 40); flash('Čistý!'); renderAll(); } }, 5],
+    spalna: ['🛏️', 'Spať', () => { state.sleep = clamp(state.sleep + 80); state.health = clamp(state.health + 20); flash('Vyspatý'); renderAll(); }],
+    wc: ['🚽', 'WC', () => { state.toilet = 0; state.health = clamp(state.health + 15); flash('Úľava'); renderAll(); }],
+    praca: ['💼', 'Pracovať', () => { const earn = 20 + Math.floor(Math.random()*40); state.coins += earn; state.fun = clamp(state.fun - 15); flash(`+${earn}¢ z roboty`); renderAll(); }],
+    church: ['🙏', 'Modlitba', () => { state.faith = clamp(state.faith + 50); flash('Amen'); renderAll(); }],
+    hracia: ['🎮', 'Hrať sa', () => { state.fun = clamp(state.fun + 60); state.hunger = clamp(state.hunger - 10); flash('Zábava!'); renderAll(); }]
   };
   if (simple[state.currentRoom]) {
     const [icon, text, fn, price] = simple[state.currentRoom];

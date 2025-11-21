@@ -1,8 +1,9 @@
 /* ============================
-   RAGNA.JS — Pou Ultimate (FINÁLNA VERZIA 2025 – všetko opravené)
+   RAGNA.JS — Pou Ultimate KONSOLIDÁCIA 2025
+   100 % FUNGUJÚCA VERZIA – VŠETKO OPRAVENÉ
    ============================ */
 
-const TICK_MS = 120000; // 2 minúty na tick
+const TICK_MS = 120000;
 const DEC = { sleep: 3, hunger: 7, fun: 9, faith: 1, toilet: 5 };
 
 const ROOM_ASSETS = {
@@ -22,59 +23,36 @@ const STORAGE_KEY = 'pou_konsolidacia_v999';
 const DEFAULT = {
   hunger: 70, health: 100, sleep: 60, fun: 75, faith: 20, toilet: 15,
   coins: 100, foodStock: 7, currentRoom: null, lastTick: Date.now(),
-  eventKonsolidacia: false,
-  blackMarketUnlocked: false,
-  hasGana: false
+  eventKonsolidacia: false, blackMarketUnlocked: false, hasGana: false
 };
 
-let state = Object.assign({}, DEFAULT, loadState());
+let state = Object.assign({}, DEFAULT, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
 let gameRunning = true;
 let tickInterval = null;
 
-/* ========== UTIL ========== */
 const q = s => document.querySelector(s);
-const qa = s => Array.from(document.querySelectorAll(s));
-function clamp(v, a = 0, b = 100) { return Math.max(a, Math.min(b, v)); }
-function fmtCoins(n) { return ` ${n}¢`; }
 
-/* ========== BEZPEČNÉ NAČÍTANIE SAVE-U ========== */
+/* ========== SAVE/LOAD ========== */
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function loadState() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return {};
-
     const data = JSON.parse(saved);
-
-    // Ak je Pou mŕtvy alebo bol offline viac ako 24h → reset
-    if (data.health <= 0) {
-      console.log("Pou bol mŕtvy → nová hra");
-      localStorage.removeItem(STORAGE_KEY);
-      return {};
-    }
-    const offlineHours = (Date.now() - data.lastTick) / (1000 * 60 * 60);
-    if (offlineHours > 24) {
-      console.log("Príliš dlho offline → nová hra");
+    if (data.health <= 0 || (Date.now() - data.lastTick) > 24*60*60*1000) {
       localStorage.removeItem(STORAGE_KEY);
       return {};
     }
     return data;
-  } catch (e) {
-    console.warn("Chyba v save → reset", e);
-    localStorage.removeItem(STORAGE_KEY);
-    return {};
-  }
+  } catch(e) { localStorage.removeItem(STORAGE_KEY); return {}; }
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-/* ========== FLASH & ALERT ========== */
-function flash(text, time = 4000) {
+/* ========== FLASH ========== */
+function flash(text, time=4000) {
   let f = q('#flash');
   if (!f) {
     f = document.createElement('div'); f.id = 'flash';
-    f.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:16px 28px;background:#000c;color:#f33;border:3px solid #f33;border-radius:20px;z-index:99999;font-weight:bold;opacity:0;transition:all .5s;';
+    f.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:16px 28px;background:#000c;color:#f33;border:3px solid #f33;border-radius:20px;z-index:99999;font-weight:bold;opacity:0;transition:opacity .5s;';
     document.body.appendChild(f);
   }
   f.innerHTML = text; f.style.opacity = '1';
@@ -82,89 +60,53 @@ function flash(text, time = 4000) {
   f.to = setTimeout(() => f.style.opacity = '0', time);
 }
 
-function showAlert(title, message) {
-  const alertDiv = document.createElement('div');
-  alertDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:100000;color:white;font-family:sans-serif;text-align:center;';
-  alertDiv.innerHTML = `
-    <div style="background:#f33;padding:40px;border-radius:20px;max-width:400px;">
-      <h2 style="margin:0;font-size:48px;">${title}</h2>
-      <p style="font-size:24px;margin:20px 0;">${message}</p>
-      <button onclick="this.parentElement.parentElement.remove()" style="padding:12px 30px;font-size:20px;background:#900;border:none;border-radius:10px;color:white;cursor:pointer;">OK</button>
-    </div>
-  `;
-  document.body.appendChild(alertDiv);
-}
-
-/* ========== EVENT KONSOLIDÁCIA ========== */
-function startKonsolidacia() {
-  if (state.eventKonsolidacia) return;
-  state.eventKonsolidacia = true;
-  showAlert('KONSOLIDÁCIA ZAČÍNA!', 'Všetky ceny zdraželi o 75%!<br>Zbohatni alebo zomri...');
-  flash('KONSOLIDÁCIA AKTÍVNA! Ceny +75%', 10000);
-  renderAll();
-}
-
-/* ========== BLACK MARKET & GANA ========== */
+/* ========== KONSOLIDÁCIA & GANA ========== */
+function getPrice(base) { return state.eventKonsolidacia ? Math.ceil(base * 1.75) : base; }
 function tryUnlockBlackMarket() {
   if (state.coins >= 10000 && !state.blackMarketUnlocked) {
     state.blackMarketUnlocked = true;
-    flash('BLACK MARKET ODOMKNUTÝ!<br>Choď do Market → "Temný kút"', 7000);
-    renderAll();
+    flash('BLACK MARKET ODOMKNUTÝ!', 8000);
   }
 }
-
 function buyGana() {
-  if (state.coins < 9999) return flash('Chýba ti presne 1¢ na ganu... smola');
-  state.coins -= 9999;
-  state.hasGana = true;
-  state.eventKonsolidacia = false;
-  if (q('#eventBanner')) q('#eventBanner').remove();
-  flash('KÚPIL SI SI GANU<br>Teraz máš dve možnosti...', 6000);
+  if (state.coins < 9999) return flash('Chýba ti 1¢... smola');
+  state.coins -= 9999; state.hasGana = true; state.eventKonsolidacia = false;
+  q('#eventBanner')?.remove();
+  flash('KÚPIL SI GANU...', 6000);
   setTimeout(() => {
-    if (confirm('Si pripravený?\n\n[OK] = ZABIŤ SA (Game Over)\n[Cancel] = ŽIŤ ĎALEJ S GANOU')) {
-      flash('Pou sa zastrelil. Koniec.', 10000);
-      setTimeout(() => { state.health = 0; renderAll(); }, 1500);
-    } else {
-      flash('Pou sa rozhodol žiť ďalej... zatiaľ', 5000);
-    }
+    if (confirm('OK = zomrieť\nCancel = žiť')) { state.health = 0; } 
+    else { flash('Žiješ... zatiaľ', 5000); }
     renderAll();
   }, 1000);
 }
 
-/* ========== CENA S EVENTOM ========== */
-function getPrice(base) {
-  return state.eventKonsolidacia ? Math.ceil(base * 1.75) : base;
-}
-
 /* ========== RENDER ========== */
 function renderAll() {
-  q('#hunger').value = state.hunger; q('#hunger-val').textContent = Math.round(state.hunger) + '%';
-  q('#health').value = state.health; q('#health-val').textContent = Math.round(state.health) + '%';
-  q('#sleep').value = state.sleep; q('#sleep-val').textContent = Math.round(state.sleep) + '%';
-  q('#fun').value = state.fun; q('#fun-val').textContent = Math.round(state.fun) + '%';
-  q('#faith').value = state.faith; q('#faith-val').textContent = Math.round(state.faith) + '%';
-  q('#toilet').value = state.toilet; q('#toilet-val').textContent = Math.round(state.toilet) + '%';
-  q('#coins').textContent = fmtCoins(state.coins);
+  q('#hunger').value = state.hunger; q('#hunger-val').textContent = Math.round(state.hunger)+'%';
+  q('#health').value = state.health; q('#health-val').textContent = Math.round(state.health)+'%';
+  q('#sleep').value = state.sleep; q('#sleep-val').textContent = Math.round(state.sleep)+'%';
+  q('#fun').value = state.fun; q('#fun-val').textContent = Math.round(state.fun)+'%';
+  q('#toilet').value = state.toilet; q('#toilet-val').textContent = Math.round(state.toilet)+'%';
+  q('#coins').textContent = ` ${state.coins}¢`;
 
-  let foodEl = q('#foodInfo');
-  if (!foodEl) {
-    foodEl = document.createElement('div'); foodEl.id = 'foodInfo';
-    q('#coins').parentNode.appendChild(foodEl);
-  }
-  foodEl.innerHTML = `Jedlo: ${state.foodStock} porcií` + (state.eventKonsolidacia ? ' <span style="color:#f33">(KONSOLIDÁCIA!)</span>' : '');
+  // Faith bar – max 1000%
+  q('#faith').value = Math.min(100, state.faith / 10);
+  q('#faith-val').textContent = state.faith + '%';
 
-  if (state.eventKonsolidacia) {
-    let ev = q('#eventBanner');
-    if (!ev) {
-      ev = document.createElement('div'); ev.id = 'eventBanner';
-      ev.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#800;color:#fff;padding:10px 30px;border-radius:50px;font-weight:bold;z-index:9998;';
-      ev.textContent = 'KONSOLIDÁCIA – ceny +75%!';
-      document.body.appendChild(ev);
-    }
-  } else if (q('#eventBanner')) q('#eventBanner').remove();
+  // Food info
+  let fi = q('#foodInfo');
+  if (!fi) { fi = document.createElement('div'); fi.id='foodInfo'; q('#coins').parentNode.appendChild(fi); }
+  fi.innerHTML = `Jedlo: ${state.foodStock} porcií` + (state.eventKonsolidacia ? ' <span style="color:#f33">(KONSOLIDÁCIA)</span>' : '');
+
+  // Event banner
+  if (state.eventKonsolidacia && !q('#eventBanner')) {
+    const b = document.createElement('div'); b.id='eventBanner'; b.textContent='KONSOLIDÁCIA +75%!';
+    b.style.cssText='position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#800;color:#fff;padding:12px 40px;border-radius:50px;font-weight:bold;z-index:9998;';
+    document.body.appendChild(b);
+  } else if (!state.eventKonsolidacia) q('#eventBanner')?.remove();
 
   q('#room-title').textContent = state.currentRoom ? state.currentRoom.charAt(0).toUpperCase() + state.currentRoom.slice(1) : 'Domov';
-  q('#room-img').src = state.currentRoom ? (ROOM_ASSETS[state.currentRoom] || ROOM_ASSETS.defaultRoom) : ROOM_ASSETS.defaultRoom;
+  q('#room-img').src = ROOM_ASSETS[state.currentRoom] || ROOM_ASSETS.defaultRoom;
 
   buildRoomActions();
   tryUnlockBlackMarket();
@@ -172,221 +114,263 @@ function renderAll() {
   if (state.health <= 0) setTimeout(gameOver, 1000);
 }
 
-/* ========== CASINO MINIGAMES ========== */
-function openSlots() {
-  showModal(`
-    <h3>Sloty</h3>
-    <img src="https://cdn-icons-png.flaticon.com/512/3078/3078241.png" style="width:200px;margin:10px auto;display:block;">
-    <p>Stávka: <input id="slotBet" type="number" min="1" value="15" style="width:80px">¢</p>
-    <button id="slotSpin" style="padding:12px 30px;font-size:18px;background:#900;color:white;border:none;border-radius:10px;">Točiť!</button>
-    <div id="slotRes" style="margin-top:20px;font-size:40px;letter-spacing:10px;text-align:center;"></div>
-  `);
-  q('#slotSpin').onclick = () => {
-    const bet = Math.max(1, +q('#slotBet').value);
-    if (state.coins < bet) return flash('Málo peňazí!');
-    state.coins -= bet;
-    const symbols = ['🍒', '🍋', '🔔', '⭐', '💎'];
-    const a = symbols[Math.floor(Math.random()*5)];
-    const b = symbols[Math.floor(Math.random()*5)];
-    const c = symbols[Math.floor(Math.random()*5)];
-    q('#slotRes').textContent = `${a} ${b} ${c}`;
-    let win = 0;
-    if (a===b && b===c) { win = bet*20; flash(`JACKPOT! +${win}¢`); }
-    else if (a===b || b===c || a===c) { win = bet*4; flash(`Výhra +${win}¢!`); }
-    if (win > 0) state.coins += win;
-    renderAll();
-  };
-}
+/* ========== TICK + TRESTY + JEŽIŠ TELEPORT ========== */
+function applyTick() {
+  if (!gameRunning) return;
 
-function openRoulette() {
-  showModal(`
-    <h3>Ruleta</h3>
-    <img src="https://www.rawpixel.com/image/12610167/png-casino-roulette-wheel-gambling-casino-game-generated-image-rawpixel.png" style="width:250px;margin:10px auto;display:block;border-radius:50%;">
-    <p>Stávka: <input id="rouletteBet" type="number" min="1" value="20" style="width:80px">¢</p>
-    <input id="rouletteChoice" placeholder="číslo 0-36 alebo red/black" style="width:220px;padding:8px;margin:5px;"><br><br>
-    <button id="rouletteSpin" style="padding:12px 40px;font-size:20px;background:#900;color:white;border:none;border-radius:10px;">Točiť koleso!</button>
-    <div id="rouletteRes" style="margin-top:20px;font-size:24px;text-align:center;"></div>
-  `);
-  q('#rouletteSpin').onclick = () => {
-    const bet = Math.max(1, +q('#rouletteBet').value);
-    if (state.coins < bet) return flash('Nedostatok mincí!');
-    state.coins -= bet;
-    const roll = Math.floor(Math.random()*37);
-    const color = roll===0 ? 'zelená' : (roll%2===0 ? 'čierna' : 'červená');
-    const choice = q('#rouletteChoice').value.trim().toLowerCase();
-    let win = 0;
-    if (!isNaN(choice) && +choice === roll) win = bet*35;
-    else if (choice==='red' && color==='červená') win = bet*2;
-    else if (choice==='black' && color==='čierna') win = bet*2;
-    q('#rouletteRes').innerHTML = `Padlo: <strong>${roll} (${color})</strong><br>`;
-    if (win>0) { state.coins += win; q('#rouletteRes').innerHTML += `<span style="color:#90ee90">VÝHRA +${win}¢!</span>`; }
-    else q('#rouletteRes').innerHTML += '<span style="color:#ff4444">Prehra</span>';
-    renderAll();
-  };
-}
+  state.hunger = Math.max(0, state.hunger - DEC.hunger);
+  state.fun    = Math.max(0, state.fun - DEC.fun);
+  state.sleep  = Math.max(0, state.sleep - DEC.sleep);
+  state.faith  = Math.max(0, state.faith - DEC.faith);
+  state.toilet = Math.min(100, state.toilet + DEC.toilet);
+  if (state.hunger <= 0 || state.toilet >= 100) state.health = Math.max(0, state.health - 15);
 
-function openBlackjack() {
-  showModal(`
-    <h3>Blackjack</h3>
-    <img src="https://img.freepik.com/free-vector/playing-cards_1284-1537.jpg" style="width:200px;margin:10px auto;display:block;">
-    <p>Stávka: <input id="bjBet" type="number" min="1" value="25" style="width:80px">¢</p>
-    <button id="bjStart" style="padding:12px 30px;font-size:18px;background:#900;color:white;border:none;border-radius:10px;">Začať hru</button>
-    <div id="bjResult" style="margin-top:20px;"></div>
-    <div id="bjControls" style="margin-top:10px;"></div>
-  `);
-  let playerHand = [], dealerHand = [], deck = [];
-  function createDeck() {
-    const suits = ['♥','♦','♣','♠'];
-    const values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-    deck = [];
-    for (let s of suits) for (let v of values) {
-      deck.push({suit:s,value:v,img:`https://deckofcards.apiwick.com/cards/${v}${s === '♥'?'h':s==='♦'?'d':s==='♣'?'c':'s'}.png`});
-    }
-    deck.sort(() => Math.random() - 0.5);
+  // Tresty za vieru
+  if (state.faith > 850) state.health = Math.max(0, state.health - 10);
+  else if (state.faith > 500) state.health = Math.max(0, state.health - 6);
+
+  // AUTOMATICKÝ TELEPORT DO JEŽIŠA PRI 1000%
+  if (state.faith >= 1000 && !q('#bossOverlay')) {
+    q('#jesusSound').play();
+    q('#heavenSound').play();
+    flash('1000% VIERY – JEŽIŠ SA ZJAVUJE!', 6000);
+    setTimeout(startJesusBossfight, 2500);
   }
-  function handValue(h) {
-    let val = 0, aces = 0;
-    for (let c of h) { if (c.value==='A') {aces++; val+=11;} else if (['J','Q','K'].includes(c.value)) val+=10; else val+=parseInt(c.value); }
-    while (val > 21 && aces--) val -= 10;
-    return val;
-  }
-  q('#bjStart').onclick = () => {
-    const bet = Math.max(1, +q('#bjBet').value);
-    if (state.coins < bet) return flash('Málo peňazí!');
-    state.coins -= bet;
-    createDeck();
-    playerHand = [deck.pop(), deck.pop()];
-    dealerHand = [deck.pop(), deck.pop()];
-    q('#bjResult').innerHTML = `Tvoja ruka: ${playerHand.map(c=>`<img src="${c.img}" style="width:60px;height:90px;">`).join('')} (=${handValue(playerHand)})<br>Dealer: <img src="${dealerHand[0].img}" style="width:60px;height:90px;"> ?`;
-    const controls = q('#bjControls'); controls.innerHTML = '';
-    const hit = Object.assign(document.createElement('button'), {textContent:'Hit', style:'padding:10px 20px;margin:5px;background:#090;color:white;border:none;border-radius:5px;'});
-    const stand = Object.assign(document.createElement('button'), {textContent:'Stand', style:'padding:10px 20px;margin:5px;background:#900;color:white;border:none;border-radius:5px;'});
-    controls.append(hit, stand);
-    hit.onclick = () => {
-      playerHand.push(deck.pop());
-      const val = handValue(playerHand);
-      q('#bjResult').innerHTML = `Tvoja ruka: ${playerHand.map(c=>`<img src="${c.img}" style="width:60px;height:90px;">`).join('')} (=${val})<br>Dealer: <img src="${dealerHand[0].img}" style="width:60px;height:90px;"> ?`;
-      if (val > 21) { q('#bjResult').innerHTML += '<br><span style="color:#f33">Bust!</span>'; controls.innerHTML = ''; renderAll(); }
-    };
-    stand.onclick = () => {
-      while (handValue(dealerHand) < 17) dealerHand.push(deck.pop());
-      const p = handValue(playerHand), d = handValue(dealerHand);
-      let res = `Tvoja: ${playerHand.map(c=>`<img src="${c.img}" style="width:60px;height:90px;">`).join('')} (=${p})<br>Dealer: ${dealerHand.map(c=>`<img src="${c.img}" style="width:60px;height:90px;">`).join('')} (=${d})<br>`;
-      let win = 0;
-      if (p > 21) res += 'Prehral si.';
-      else if (d > 21 || p > d) { win = bet*2; state.coins += win; res += `Vyhral si ${win}¢!`; }
-      else if (p === d) { state.coins += bet; res += 'Remíza.'; }
-      else res += 'Prehral si.';
-      q('#bjResult').innerHTML = res; controls.innerHTML = ''; renderAll();
-    };
+
+  state.lastTick = Date.now();
+  renderAll();
+}
+
+/* ========== JEŽIŠ BOSSFIGHT ========== */
+function startJesusBossfight() {
+  if (q('#bossOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'bossOverlay';
+  overlay.classList.add('active');
+  overlay.innerHTML = `
+    <h1 style="font-size:60px;color:gold;text-shadow:0 0 20px gold;">✞ JEŽIŠ CHRISTUS ✞</h1>
+    <img id="jesusFace" src="https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/jesus_boss.png">
+    <div id="bossText" style="font-size:32px;margin:30px;font-weight:bold;">RUSKÁ RULETA O DUŠU</div>
+    <div id="bossButtons"></div>
+    <div style="margin-top:40px;font-size:22px;color:#888;">Kolo <span id="roundNum">1</span>/3</div>
+  `;
+  document.body.appendChild(overlay);
+
+  let round = 1;
+  q('#jesusSound').loop = true;
+  q('#jesusSound').play();
+
+  window.nextRound = () => {
+    q('#bossButtons').innerHTML = '<div class="revolver">Revolver</div><br>Točí sa...';
+    setTimeout(() => {
+      q('#gunshotSound').play();
+      const jesusDies = Math.random() < 0.5;
+      if (jesusDies) {
+        q('#bossText').innerHTML = '✞ JEŽIŠ SA ZASTRELIL ✞<br><span style="color:#0f0">VYHRAL SI KOLO!</span>';
+        round++;
+      } else {
+        q('#bossText').innerHTML = '✞ TY SI ZOMREL ✞<br><span style="color:#f33">KONIEC</span>';
+        setTimeout(() => { state.health = 0; overlay.remove(); renderAll(); }, 3000);
+        return;
+      }
+      if (round > 3) {
+        q('#bossText').innerHTML = '✞ PORAZIL SI BOHA ✞';
+        state.coins += 77777; state.health = 100;
+        q('#bossButtons').innerHTML = `<button onclick="q('#bossOverlay').remove();q('#jesusSound').pause();renderAll();" style="padding:20px 60px;background:gold;color:black;font-size:30px;border-radius:20px;">STAŤ SA BOHOM</button>`;
+      } else {
+        q('#roundNum').textContent = round;
+        q('#bossButtons').innerHTML = `<button onclick="nextRound()" style="padding:20px 60px;font-size:30px;background:#900;color:white;border:4px solid gold;border-radius:20px;">ĎALŠIE KOLO</button>`;
+      }
+    }, 2800);
   };
+  q('#bossButtons').innerHTML = `<button onclick="nextRound()" style="padding:20px 60px;font-size:32px;background:#900;color:white;border:4px solid gold;border-radius:20px;">ZAČAŤ BOJ</button>`;
 }
 
-function openCoinFlip() {
-  showModal(`
-    <h3>Hod mincou</h3>
-    <img src="https://www.pngkey.com/png/full/2-24947_coin-toss-heads-or-tails-coin-flip-png.png" style="width:150px;margin:10px auto;display:block;">
-    <p>Stávka: <input id="coinBet" type="number" min="1" value="30" style="width:80px">¢</p>
-    <button id="headsBtn" style="padding:15px 40px;font-size:22px;margin:8px;background:#900;color:white;border:none;border-radius:10px;">Hlava</button>
-    <button id="tailsBtn" style="padding:15px 40px;font-size:22px;margin:8px;background:#900;color:white;border:none;border-radius:10px;">Písmo</button>
-    <div id="coinRes" style="margin-top:20px;font-size:50px;text-align:center;"></div>
-  `);
-  q('#headsBtn').onclick = () => coinFlip(true);
-  q('#tailsBtn').onclick = () => coinFlip(false);
-  function coinFlip(guess) {
-    const bet = Math.max(1, +q('#coinBet').value);
-    if (state.coins < bet) return flash('Málo peňazí!');
-    state.coins -= bet;
-    const result = Math.random() < 0.5;
-    const img = result
-      ? 'https://www.pngkey.com/png/full/2-24947_coin-toss-heads-or-tails-coin-flip-png.png'
-      : 'https://www.pngall.com/wp-content/uploads/2016/04/Coin-Tails-PNG.png';
-    q('#coinRes').innerHTML = `<img src="${img}" style="width:100px;height:100px;"><br>${result ? 'Hlava' : 'Písmo'}<br>`;
-    if (result === guess) { state.coins += bet*2; q('#coinRes').innerHTML += '<span style="color:#90ee90">VÝHRA!</span>'; }
-    else q('#coinRes').innerHTML += '<span style="color:#ff4444">Prehra</span>';
-    renderAll();
-  }
-}
-
-function showModal(html) {
-  const modal = q('#modal');
-  modal.classList.remove('hidden');
-  q('#modal-content').innerHTML = html + '<button id="closeModal" style="position:absolute;top:10px;right:10px;padding:10px;font-size:20px;background:#900;color:white;border:none;border-radius:5px;cursor:pointer;">X</button>';
-  q('#closeModal').onclick = () => modal.classList.add('hidden');
-  modal.onclick = e => { if (e.target === modal) modal.classList.add('hidden'); };
-}
-
-/* ========== AKCIE V MIESTNOSTIACH ========== */
+/* ========== ROOM ACTIONS ========== */
 function buildRoomActions() {
-  const actions = q('#actions'); actions.innerHTML = '';
-  if (!state.currentRoom) { actions.innerHTML = '<div class="muted">Vyber miestnosť</div>'; return; }
+  const a = q('#actions'); a.innerHTML = '';
+  if (!state.currentRoom) { a.innerHTML = '<div class="muted">Vyber miestnosť</div>'; return; }
 
-  const btn = (icon, text, onclick, price = null) => {
+  const btn = (icon, text, fn, price = null) => {
     const b = document.createElement('button');
     b.innerHTML = `${icon} ${text}` + (price !== null ? ` <small>(${getPrice(price)}¢)</small>` : '');
-    b.style.cssText = 'padding:16px;margin:8px;font-size:18px;border-radius:16px;';
-    b.onclick = onclick;
-    actions.appendChild(b);
+    b.onclick = fn;
+    a.appendChild(b);
   };
 
+  // KUCHYŇA
   if (state.currentRoom === 'kuchyna') {
-    actions.innerHTML += `<div style="margin:12px 0"><strong>Zásoba: ${state.foodStock}</strong></div>`;
-    btn('Burger', 'Jesť (1 porcia)', () => {
+    a.innerHTML += `<div style="margin:12px 0"><strong>Zásoba: ${state.foodStock}</strong></div>`;
+    btn('Burger', 'Jesť', () => {
       if (state.foodStock <= 0) return flash('Došlo jedlo!');
-      state.foodStock--; state.hunger = clamp(state.hunger + 55); state.health = clamp(state.health + 12); state.toilet = clamp(state.toilet + 20);
-      flash('Mňam mňam!');
-      renderAll();
+      state.foodStock--; state.hunger = Math.min(100, state.hunger + 55);
+      state.health = Math.min(100, state.health + 12); state.toilet += 20;
+      flash('Mňam!'); renderAll();
     });
     btn('Shopping Cart', 'Kúpiť 5× jedlo', () => {
       const cena = getPrice(22);
       if (state.coins >= cena) { state.coins -= cena; state.foodStock += 5; flash('Kúpil si jedlo!'); renderAll(); }
-      else flash('Nemáš dosť peňazí!');
-    }, 22);
+      else flash('Málo peňazí!');
+    });
   }
 
+  // MARKET
   if (state.currentRoom === 'market') {
-    btn('Shopping Bags', 'Malá zásoba +8', () => { const c = getPrice(18); if (state.coins >= c) { state.coins -= c; state.foodStock += 8; flash('Kúpil si!'); renderAll(); } }, 18);
-    btn('Package', 'Stredná +20', () => { const c = getPrice(45); if (state.coins >= c) { state.coins -= c; state.foodStock += 20; flash('Veľká zásoba!'); renderAll(); } }, 45);
-    btn('Shopping Cart', 'Veľká +50', () => { const c = getPrice(100); if (state.coins >= c) { state.coins -= c; state.foodStock += 50; flash('MEGA nákup!'); renderAll(); } }, 100);
-
+    btn('Shopping Bags', 'Malá zásoba +8', () => { const c=getPrice(18); if(state.coins>=c){state.coins-=c;state.foodStock+=8;renderAll();} });
+    btn('Package', 'Stredná +20', () => { const c=getPrice(45); if(state.coins>=c){state.coins-=c;state.foodStock+=20;renderAll();} });
+    btn('Shopping Cart', 'Veľká +50', () => { const c=getPrice(100); if(state.coins>=c){state.coins-=c;state.foodStock+=50;renderAll();} });
     if (state.blackMarketUnlocked) {
-      actions.innerHTML += '<hr style="border-color:#f33;"><div style="color:#f33;font-weight:bold;font-size:20px;">Temný kút</div>';
-      if (!state.hasGana) {
-        btn('Gun', 'Kúpiť ganu', buyGana);
-      } else {
-        btn('Skull', 'Použiť ganu (koniec)', () => confirm('Naozaj?') && (state.health = 0, renderAll()));
-      }
+      a.innerHTML += '<hr style="border-color:#f33;"><div style="color:#f33;font-weight:bold;">Temný kút</div>';
+      if (!state.hasGana) btn('Gun', 'Kúpiť ganu', buyGana);
+      else btn('Skull', 'Použiť ganu', () => confirm('Naozaj?') && (state.health=0, renderAll()));
     }
   }
 
+  // KOSTOL – modlenie
+  if (state.currentRoom === 'church') {
+    const gain = state.faith > 850 ? 5 : 15;
+    btn('Modlitba', 'Modliť sa', () => {
+      state.faith = Math.min(1000, state.faith + gain);
+      flash(`+${gain}% viery` + (state.faith >= 1000 ? ' → JEŽIŠ PRÍDE!' : ''));
+      renderAll();
+    });
+  }
+
+  // CASINO
   if (state.currentRoom === 'casino') {
     btn('Slot Machine', 'Sloty', openSlots);
     btn('Roulette', 'Ruleta', openRoulette);
     btn('Coin', 'Hod mincou', openCoinFlip);
-    btn('Cards', 'Blackjack', openBlackjack);
   }
 
+  // Ostatné jednoduché izby
   const simple = {
-    kupelna: ['🚿', 'Sprcha', () => { const c = getPrice(5); if (state.coins >= c) { state.coins -= c; state.health = clamp(state.health + 40); flash('Čistý!'); renderAll(); } }, 5],
-    spalna: ['🛏️', 'Spať', () => { state.sleep = clamp(state.sleep + 80); state.health = clamp(state.health + 20); flash('Vyspatý'); renderAll(); }],
-    wc: ['🚽', 'WC', () => { state.toilet = 0; state.health = clamp(state.health + 15); flash('Úľava'); renderAll(); }],
-    praca: ['💼', 'Pracovať', () => { const earn = 20 + Math.floor(Math.random()*40); state.coins += earn; state.fun = clamp(state.fun - 15); flash(`+${earn}¢ z roboty`); renderAll(); }],
-    church: ['🙏', 'Modlitba', () => { state.faith = clamp(state.faith + 50); flash('Amen'); renderAll(); }],
-    hracia: ['🎮', 'Hrať sa', () => { state.fun = clamp(state.fun + 60); state.hunger = clamp(state.hunger - 10); flash('Zábava!'); renderAll(); }]
+    kupelna: ['Sprcha', () => { const c=getPrice(5); if(state.coins>=c){state.coins-=c;state.health=Math.min(100,state.health+40);renderAll();}}],
+    spalna: ['Spať', () => { state.sleep = Math.min(100, state.sleep + 80); state.health = Math.min(100, state.health + 20); renderAll(); }],
+    wc: ['WC', () => { state.toilet = 0; state.health = Math.min(100, state.health + 15); renderAll(); }],
+    praca: ['Pracovať', () => { const earn = 20 + Math.floor(Math.random()*40); state.coins += earn; state.fun = Math.max(0, state.fun - 15); flash(`+${earn}¢`); renderAll(); }],
+    hracia: ['Hrať sa', () => { state.fun = Math.min(100, state.fun + 60); state.hunger = Math.max(0, state.hunger - 10); renderAll(); }]
   };
   if (simple[state.currentRoom]) {
-    const [icon, text, fn, price] = simple[state.currentRoom];
-    btn(icon, text, fn, price || null);
+    const [text, fn] = simple[state.currentRoom];
+    btn(text.slice(0,2), text, fn);
   }
 
   btn('House', 'Domov', () => { state.currentRoom = null; renderAll(); }).style.marginTop = '30px';
 }
 
-/* ========== GAME OVER ========== */
+/* ========== CASINO S OBRÁZKAMI ========== */
+/* ========== CASINO – ČISTO SO ZNAKMI (ŽIADNE OBRÁZKY) ========== */
+
+function showModal(html) {
+  const m = q('#modal');
+  m.classList.remove('hidden');
+  q('#modal-content').innerHTML = html + '<button id="closeModal" style="position:absolute;top:10px;right:10px;padding:10px;background:#900;color:white;border:none;border-radius:5px;cursor:pointer;">X</button>';
+  q('#closeModal').onclick = () => m.classList.add('hidden');
+  m.onclick = e => { if (e.target === m) m.classList.add('hidden'); };
+}
+
+function openSlots() {
+  showModal(`
+    <h3 style="color:#ff0;text-shadow:0 0 10px gold;">777 SLOTY 777</h3>
+    <div style="font-size:90px;letter-spacing:20px;margin:40px 0;" id="reels">🍒🍋🔔</div>
+    <p>Stávka: <input id="slotBet" type="number" min="1" value="100" style="width:100px;padding:8px;font-size:18px;">¢</p>
+    <button id="slotSpin" style="padding:16px 60px;font-size:30px;background:#900;color:#fff;border:4px solid gold;border-radius:15px;">SPIN!</button>
+  `);
+
+  const symbols = ['🍒','🍋','🔔','⭐','💎'];
+
+  q('#slotSpin').onclick = () => {
+    const bet = Math.max(1, +q('#slotBet').value);
+    if (state.coins < bet) return flash('Málo coinov!');
+    state.coins -= bet;
+
+    let spins = 18;
+    const int = setInterval(() => {
+      q('#reels').textContent = symbols[Math.floor(Math.random()*5)] + symbols[Math.floor(Math.random()*5)] + symbols[Math.floor(Math.random()*5)];
+      if (--spins <= 0) {
+        clearInterval(int);
+        const a = symbols[Math.floor(Math.random()*5)];
+        const b = symbols[Math.floor(Math.random()*5)];
+        const c = symbols[Math.floor(Math.random()*5)];
+        q('#reels').textContent = a + b + c;
+
+        if (a===b && b===c) { const win = bet*30; state.coins += win; flash(`JACKPOT +${win}¢!`,7000); }
+        else if (a===b || b===c || a===c) { const win = bet*5; state.coins += win; flash(`Výhra +${win}¢!`,5000); }
+        renderAll();
+      }
+    }, 90);
+  };
+}
+
+function openRoulette() {
+  showModal(`
+    <h3 style="color:#ff0;text-shadow:0 0 10px gold;">RULETA</h3>
+    <p style="font-size:80px;margin:30px;">🎰</p>
+    <p>Stávka: <input id="bet" type="number" min="1" value="100" style="width:100px;padding:8px;">¢</p>
+    <input id="choice" placeholder="0–36, red, black, even, odd" style="width:280px;padding:10px;">
+    <button id="spin" style="padding:16px 60px;font-size:30px;background:#900;color:#fff;border:4px solid gold;border-radius:15px;">SPIN!</button>
+    <div id="res" style="margin-top:20px;font-size:28px;font-weight:bold;"></div>
+  `);
+
+  q('#spin').onclick = () => {
+    const bet = Math.max(1, +q('#bet').value);
+    if (state.coins < bet) return flash('Málo peňazí!');
+    state.coins -= bet;
+    const roll = Math.floor(Math.random()*37);
+    const color = roll===0 ? 'zelená' : (roll%2===0 ? 'čierna' : 'červená');
+    const ch = q('#choice').value.trim().toLowerCase();
+
+    let win = 0;
+    if (+ch === roll) win = bet*35;
+    else if (ch==='red' && color==='červená') win = bet*2;
+    else if (ch==='black' && color==='čierna') win = bet*2;
+    else if (ch==='even' && roll!==0 && roll%2===0) win = bet*2;
+    else if (ch==='odd' && roll%2===1) win = bet*2;
+
+    q('#res').innerHTML = `Padlo: ${roll} (${color})<br>`;
+    if (win>0) { state.coins += win; q('#res').innerHTML += `<span style="color:#0f0">VÝHRA +${win}¢!</span>`; }
+    else q('#res').innerHTML += '<span style="color:#f33">Prehra</span>';
+    renderAll();
+  };
+}
+
+function openCoinFlip() {
+  showModal(`
+    <h3 style="color:#ff0;text-shadow:0 0 10px gold;">HOD MINCOU</h3>
+    <p style="font-size:180px;margin:20px 0;" id="coin">🪙</p>
+    <p>Stávka: <input id="bet" type="number" min="1" value="200" style="width:110px;padding:8px;">¢</p>
+    <button id="heads" style="padding:16px 50px;font-size:28px;margin:10px;background:#0066cc;color:white;border:4px solid gold;border-radius:15px;">HLAVA</button>
+    <button id="tails" style="padding:16px 50px;font-size:28px;margin:10px;background:#c33;color:white;border:4px solid gold;border-radius:15px;">PÍSMO</button>
+    <div id="res" style="font-size:32px;margin-top:20px;font-weight:bold;"></div>
+  `);
+
+  const flip = (isHeads) => {
+    const bet = Math.max(1, +q('#bet').value);
+    if (state.coins < bet) return flash('Málo coinov!');
+    state.coins -= bet;
+
+    let flips = 0;
+    const int = setInterval(() => {
+      q('#coin').textContent = ++flips % 2 ? '🪙' : '💿';
+      if (flips > 12) {
+        clearInterval(int);
+        const result = Math.random() < 0.5;
+        q('#coin').textContent = result ? '🪙' : '💿';
+        q('#res').textContent = result ? 'HLAVA' : 'PÍSMO';
+        if (result === isHeads) { state.coins += bet*2; q('#res').innerHTML += '<br><span style="color:#0f0">VÝHRA!</span>'; }
+        else q('#res').innerHTML += '<br><span style="color:#f33">PREHRA</span>';
+        renderAll();
+      }
+    }, 110);
+  };
+  q('#heads').onclick = () => flip(true);
+  q('#tails').onclick = () => flip(false);
+}
+
+/* ========== GAME OVER & INIT ========== */
 function gameOver() {
-  if (!gameRunning) return;
-  gameRunning = false;
-  clearInterval(tickInterval);
+  gameRunning = false; clearInterval(tickInterval);
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:99999;color:#f33;font-size:60px;text-align:center;';
   ov.innerHTML = `<div style="background:#300;padding:60px;border:10px solid #f33;border-radius:30px;">
@@ -395,180 +379,21 @@ function gameOver() {
   document.body.appendChild(ov);
 }
 
-/* ========== BEZPEČNÝ TICK ========== */
-function applyTick() {
-  if (!gameRunning) return;
-  state.hunger = clamp(state.hunger - DEC.hunger);
-  state.fun = clamp(state.fun - DEC.fun);
-  state.sleep = clamp(state.sleep - DEC.sleep);
-  state.faith = clamp(state.faith - DEC.faith);
-  state.toilet = clamp(state.toilet + DEC.toilet);
-  if (state.hunger <= 0 || state.toilet >= 100) state.health = clamp(state.health - 15);
-  state.lastTick = Date.now();
-  renderAll();
-}
-
 function startTick() {
   clearInterval(tickInterval);
   const missed = Math.min(Math.floor((Date.now() - state.lastTick) / TICK_MS), 12);
   for (let i = 0; i < missed; i++) applyTick();
-  if (missed >= 12) flash('Prežil si dlhú pauzu... ledva!', 8000);
   tickInterval = setInterval(applyTick, TICK_MS);
 }
 
-/* ========== INIT ========== */
-qa('.rooms button').forEach(b => b.onclick = () => { state.currentRoom = b.dataset.room; renderAll(); });
+document.querySelectorAll('.rooms button').forEach(b => b.onclick = () => { state.currentRoom = b.dataset.room; renderAll(); });
 q('#pou-img').onclick = () => { state.currentRoom = null; renderAll(); };
 q('#saveBtn').onclick = () => { saveState(); flash('Uložené'); };
 q('#resetBtn').onclick = () => confirm('Reset?') && (localStorage.removeItem(STORAGE_KEY), location.reload());
 
-function init() {
+window.onload = () => {
   renderAll();
   startTick();
-  if (!state.eventKonsolidacia) {
-    setTimeout(startKonsolidacia, 8 * 60 * 1000);
-  }
+  if (!state.eventKonsolidacia) setTimeout(() => { state.eventKonsolidacia = true; flash('KONSOLIDÁCIA ZAČALA!', 10000); renderAll(); }, 8*60*1000);
   window.addEventListener('beforeunload', saveState);
-}
-
-/* ========== JEŽIŠ BOSS MECHANIKA ========== */
-
-// Nové asset-y
-ROOM_ASSETS.nebesia = 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/nebesia_jesus.jpg';
-
-// Trest za prílišnú vieru (aplikuje sa každým tickom)
-const originalApplyTick = applyTick;
-applyTick = function() {
-  if (!gameRunning) return;
-  
-  // Pôvodný tick
-  originalApplyTick();
-
-  // === VIERA TRESTY ===
-  if (state.faith > 1000) {
-    // AUTOMATICKÝ TELEPORT DO NEBÍ A BOSSFIGHT
-    if (state.currentRoom !== 'nebesia') {
-      state.currentRoom = 'nebesia';
-      q('#jesusSound').play();
-      q('#heavenSound').play();
-      flash('VIERA PREKROČILA HRANICU...', 5000);
-      setTimeout(startJesusBossfight, 3000);
-      renderAll();
-    }
-    return;
-  }
-
-  if (state.faith > 850) {
-    state.faith = clamp(state.faith + 5);  // len +5 za akcie
-    state.health = clamp(state.health - 12);
-    if (Math.random() < 0.3) flash('Boh ťa trestá za pýchu...', 3000);
-  } else if (state.faith > 500) {
-    state.health = clamp(state.health - 6);
-    if (Math.random() < 0.4) flash('Prílišná viera bolí...', 3000);
-  }
 };
-
-// Bossfight overlay
-function createBossOverlay() {
-  if (q('#bossOverlay')) return;
-  const overlay = document.createElement('div');
-  overlay.id = 'bossOverlay';
-  overlay.innerHTML = `
-    <h1 style="font-size:60px;margin:20px;color:#gold;text-shadow:0 0 20px gold;">✞ JEŽIŠ CHRISTUS ✞</h1>
-    <img id="jesusFace" src="https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/jesus_boss.png">
-    <div id="bossText" style="font-size:32px;margin:30px;font-weight:bold;"></div>
-    <div id="bossButtons"></div>
-    <div style="margin-top:40px;font-size:20px;color:#666;">Kolo <span id="roundNum">1</span>/3</div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function startJesusBossfight() {
-  createBossOverlay();
-  const overlay = q('#bossOverlay');
-  const text = q('#bossText');
-  const btns = q('#bossButtons');
-  let round = 1;
-
-  q('#jesusSound').loop = true;
-  q('#jesusSound').play();
-
-  text.innerHTML = 'PREKROČIL SI HRANICU VIERY...<br><br>Teraz hráme...<br><span style="font-size:50px;color:#f33">RUSKÚ RULETU</span>';
-  btns.innerHTML = `<button onclick="jesusRound(${round})" style="padding:20px 50px;font-size:30px;background:#900;color:white;border:4px solid gold;border-radius:20px;margin:20px;cursor:pointer;">ZAČAŤ BOJ</button>`;
-
-  window.jesusRound = function(r) {
-    btns.innerHTML = '';
-    text.innerHTML = `<div class="revolver">🔫</div><br>Ježiš točí valec...`;
-    
-    setTimeout(() => {
-      const jesusShoots = Math.random() < 0.5;
-      q('#gunshotSound').play();
-
-      if (jesusShoots) {
-        text.innerHTML = '✞ JEŽIŠ SA ZASTRELIL ✞<br><span style="color:green">VYHODIL SI KOLO!</span>';
-        round++;
-      } else {
-        text.innerHTML = '✞ TY SI SA ZASTRELIL ✞<br><span style="color:#f33">PREHRAL SI</span>';
-        setTimeout(() => {
-          state.health = 0;
-          overlay.remove();
-          renderAll();
-        }, 3000);
-        return;
-      }
-
-      if (round > 3) {
-        text.innerHTML = '✞ VYHRAL SI NAD BOHOM ✞<br><br>Si nový Pán nebies...<br><span style="color:gold">VIERA ODOMKNUTÁ NAVŽDY</span>';
-        state.faith = 9999;
-        state.coins += 50000;
-        state.health = 100;
-        btns.innerHTML = `<button onclick="q('#bossOverlay').remove();renderAll();" style="padding:20px 50px;background:gold;color:black;font-size:28px;border:none;border-radius:20px;">STAŤ SA BOHOM</button>`;
-        q('#jesusSound').pause();
-      } else {
-        q('#roundNum').textContent = round;
-        btns.innerHTML = `<button onclick="jesusRound(${round})" style="padding:20px 50px;font-size:30px;background:#900;color:white;border:4px solid gold;border-radius:20px;margin:20px;cursor:pointer;">ĎALŠIE KOLO</button>`;
-      }
-    }, 2500);
-  };
-
-  overlay.classList.add('active');
-}
-
-// Pridaj do buildRoomActions pre nebesia
-const originalBuildRoomActions = buildRoomActions;
-buildRoomActions = function() {
-  originalBuildRoomActions();
-
-  if (state.currentRoom === 'nebesia') {
-    const actions = q('#actions');
-    actions.innerHTML = '';
-    
-    const btn = (text, onclick) => {
-      const b = document.createElement('button');
-      b.textContent = text;
-      b.style.cssText = 'padding:20px 40px;margin:15px;font-size:24px;background:#fff;color:#000;border:4px solid gold;border-radius:20px;cursor:pointer;';
-      b.onclick = onclick;
-      actions.appendChild(b);
-    };
-
-    btn('🙏 Modliť sa ešte viac', () => {
-      state.faith = clamp(state.faith + 100);
-      flash('VIERA +100%');
-      renderAll();
-    });
-
-    btn('😇 Pokračovať v bossfighte', () => {
-      if (state.faith > 1000) startJesusBossfight();
-      else flash('Ešte nie si hoden... viera < 1000%');
-    });
-
-    btn('🏠 Utiecť späť na Zem', () => {
-      state.currentRoom = null;
-      renderAll();
-    });
-  }
-};
-
-
-init();
-

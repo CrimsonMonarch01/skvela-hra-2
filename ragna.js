@@ -430,4 +430,145 @@ function init() {
   }
   window.addEventListener('beforeunload', saveState);
 }
+
+/* ========== JEŽIŠ BOSS MECHANIKA ========== */
+
+// Nové asset-y
+ROOM_ASSETS.nebesia = 'https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/nebesia_jesus.jpg';
+
+// Trest za prílišnú vieru (aplikuje sa každým tickom)
+const originalApplyTick = applyTick;
+applyTick = function() {
+  if (!gameRunning) return;
+  
+  // Pôvodný tick
+  originalApplyTick();
+
+  // === VIERA TRESTY ===
+  if (state.faith > 1000) {
+    // AUTOMATICKÝ TELEPORT DO NEBÍ A BOSSFIGHT
+    if (state.currentRoom !== 'nebesia') {
+      state.currentRoom = 'nebesia';
+      q('#jesusSound').play();
+      q('#heavenSound').play();
+      flash('VIERA PREKROČILA HRANICU...', 5000);
+      setTimeout(startJesusBossfight, 3000);
+      renderAll();
+    }
+    return;
+  }
+
+  if (state.faith > 850) {
+    state.faith = clamp(state.faith + 5);  // len +5 za akcie
+    state.health = clamp(state.health - 12);
+    if (Math.random() < 0.3) flash('Boh ťa trestá za pýchu...', 3000);
+  } else if (state.faith > 500) {
+    state.health = clamp(state.health - 6);
+    if (Math.random() < 0.4) flash('Prílišná viera bolí...', 3000);
+  }
+};
+
+// Bossfight overlay
+function createBossOverlay() {
+  if (q('#bossOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'bossOverlay';
+  overlay.innerHTML = `
+    <h1 style="font-size:60px;margin:20px;color:#gold;text-shadow:0 0 20px gold;">✞ JEŽIŠ CHRISTUS ✞</h1>
+    <img id="jesusFace" src="https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/jesus_boss.png">
+    <div id="bossText" style="font-size:32px;margin:30px;font-weight:bold;"></div>
+    <div id="bossButtons"></div>
+    <div style="margin-top:40px;font-size:20px;color:#666;">Kolo <span id="roundNum">1</span>/3</div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function startJesusBossfight() {
+  createBossOverlay();
+  const overlay = q('#bossOverlay');
+  const text = q('#bossText');
+  const btns = q('#bossButtons');
+  let round = 1;
+
+  q('#jesusSound').loop = true;
+  q('#jesusSound').play();
+
+  text.innerHTML = 'PREKROČIL SI HRANICU VIERY...<br><br>Teraz hráme...<br><span style="font-size:50px;color:#f33">RUSKÚ RULETU</span>';
+  btns.innerHTML = `<button onclick="jesusRound(${round})" style="padding:20px 50px;font-size:30px;background:#900;color:white;border:4px solid gold;border-radius:20px;margin:20px;cursor:pointer;">ZAČAŤ BOJ</button>`;
+
+  window.jesusRound = function(r) {
+    btns.innerHTML = '';
+    text.innerHTML = `<div class="revolver">🔫</div><br>Ježiš točí valec...`;
+    
+    setTimeout(() => {
+      const jesusShoots = Math.random() < 0.5;
+      q('#gunshotSound').play();
+
+      if (jesusShoots) {
+        text.innerHTML = '✞ JEŽIŠ SA ZASTRELIL ✞<br><span style="color:green">VYHODIL SI KOLO!</span>';
+        round++;
+      } else {
+        text.innerHTML = '✞ TY SI SA ZASTRELIL ✞<br><span style="color:#f33">PREHRAL SI</span>';
+        setTimeout(() => {
+          state.health = 0;
+          overlay.remove();
+          renderAll();
+        }, 3000);
+        return;
+      }
+
+      if (round > 3) {
+        text.innerHTML = '✞ VYHRAL SI NAD BOHOM ✞<br><br>Si nový Pán nebies...<br><span style="color:gold">VIERA ODOMKNUTÁ NAVŽDY</span>';
+        state.faith = 9999;
+        state.coins += 50000;
+        state.health = 100;
+        btns.innerHTML = `<button onclick="q('#bossOverlay').remove();renderAll();" style="padding:20px 50px;background:gold;color:black;font-size:28px;border:none;border-radius:20px;">STAŤ SA BOHOM</button>`;
+        q('#jesusSound').pause();
+      } else {
+        q('#roundNum').textContent = round;
+        btns.innerHTML = `<button onclick="jesusRound(${round})" style="padding:20px 50px;font-size:30px;background:#900;color:white;border:4px solid gold;border-radius:20px;margin:20px;cursor:pointer;">ĎALŠIE KOLO</button>`;
+      }
+    }, 2500);
+  };
+
+  overlay.classList.add('active');
+}
+
+// Pridaj do buildRoomActions pre nebesia
+const originalBuildRoomActions = buildRoomActions;
+buildRoomActions = function() {
+  originalBuildRoomActions();
+
+  if (state.currentRoom === 'nebesia') {
+    const actions = q('#actions');
+    actions.innerHTML = '';
+    
+    const btn = (text, onclick) => {
+      const b = document.createElement('button');
+      b.textContent = text;
+      b.style.cssText = 'padding:20px 40px;margin:15px;font-size:24px;background:#fff;color:#000;border:4px solid gold;border-radius:20px;cursor:pointer;';
+      b.onclick = onclick;
+      actions.appendChild(b);
+    };
+
+    btn('🙏 Modliť sa ešte viac', () => {
+      state.faith = clamp(state.faith + 100);
+      flash('VIERA +100%');
+      renderAll();
+    });
+
+    btn('😇 Pokračovať v bossfighte', () => {
+      if (state.faith > 1000) startJesusBossfight();
+      else flash('Ešte nie si hoden... viera < 1000%');
+    });
+
+    btn('🏠 Utiecť späť na Zem', () => {
+      state.currentRoom = null;
+      renderAll();
+    });
+  }
+};
+
+
 init();
+

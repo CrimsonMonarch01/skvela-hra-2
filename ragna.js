@@ -143,8 +143,8 @@ function startJesusBossfight() {
 
   const updateUI = () => {
     overlay.innerHTML = `
-      <h1 style="font-size:70px;color:gold;text-shadow:0 0 30px gold;margin:10px;">JEŽIŠ CHRISTUS</h1>
-      <img src="https://raw.githubusercontent.com/CrimsonMonarch01/skvela-hra-2/main/jesus_boss.png" style="width:200px;margin:20px;">
+      <h1 style="font-size:70px;color:gold;text-shadow:0 0 30px gold;margin:10px;">JEŽIŠ CHIPSTUS</h1>
+      <img src="https://github.com/CrimsonMonarch01/skvela-hra-2/blob/main/jezisruleta_release.png?raw=true" style="width:600px;margin:20px;">
       <div style="font-size:36px;margin:10px;">RUSKÁ RULETA O DUŠU</div>
       <div style="font-size:28px;color:#f66;margin:10px;">Nábojov: <strong>${6 - position}/6</strong></div>
       <div id="status" style="font-size:32px;margin:20px;height:60px;font-weight:bold;"></div>
@@ -157,10 +157,10 @@ function startJesusBossfight() {
     q('#status').textContent = 'Tvoja runda!';
     q('#buttons').innerHTML = `
       <button onclick="playerShootSelf()" style="padding:20px 50px;margin:10px;font-size:28px;background:#900;color:white;border:5px solid gold;border-radius:20px;">
-        STRIEĽAŤ NA SEBA
+        STRÍĽAŤ NA SEBA
       </button>
       <button onclick="playerShootJesus()" style="padding:20px 50px;margin:10px;font-size:28px;background:#090;color:white;border:5px solid gold;border-radius:20px;">
-        STRIEĽAŤ NA JEŽIŠA
+        STRÍĽAŤ NA JEŽIŠA
       </button>
     `;
   };
